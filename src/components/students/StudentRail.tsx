@@ -68,7 +68,7 @@ export function StudentRail({
         </label>
       )}
 
-      <ul className="min-h-0 flex-1 overflow-y-auto pr-0.5" aria-label="Student list">
+      <ul className="stagger min-h-0 flex-1 overflow-y-auto pr-0.5" aria-label="Student list">
         {filtered.map((student) => (
           <StudentCard
             key={student.id}

@@ -15,7 +15,7 @@ export function Toast({ toast, onDismiss }: { toast: { id: number; message: stri
   return (
     <div role="status" aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex justify-center px-3 lg:bottom-5">
       {toast && (
-        <div key={toast.id} className="pointer-events-auto flex max-w-lg items-start gap-3 rounded-xl bg-ink px-4 py-3 text-sm text-bg shadow-lg">
+        <div key={toast.id} className="anim-rise pointer-events-auto flex max-w-lg items-start gap-3 rounded-xl bg-ink px-4 py-3 text-sm text-bg shadow-lg">
           <p>{toast.message}</p>
           <button type="button" onClick={onDismiss} aria-label="Dismiss message" className="rounded p-0.5 opacity-80 hover:opacity-100">
             <X className="h-4 w-4" aria-hidden />

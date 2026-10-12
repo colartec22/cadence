@@ -350,7 +350,7 @@ export function ScheduleGrid({
                           activate(day, slot, e.shiftKey);
                         }}
                         className={clsx(
-                          "relative flex h-10 w-full min-w-[56px] items-center gap-0.5 overflow-hidden rounded-md px-1 text-left transition-colors",
+                          "relative flex h-10 w-full min-w-[56px] items-center gap-0.5 overflow-hidden rounded-md px-1 text-left transition duration-100 ease-out",
                           cell.closed ? "bg-line/40" : cell.need > 0 ? "bg-gap-bg ring-1 ring-inset ring-gap" : "bg-ok-bg",
                           cell.mine && "ring-2 ring-inset ring-accent",
                           inDrag(day, slot) &&

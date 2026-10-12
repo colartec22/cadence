@@ -44,7 +44,7 @@ export function StudentCard({
 
   return (
     <li
-      className={clsx("mb-2 rounded-xl border border-line border-l-4 bg-panel p-3", selected && "ring-2 ring-accent")}
+      className={clsx("mb-2 rounded-xl border border-line border-l-4 bg-panel p-3 transition duration-150 hover:-translate-y-px hover:shadow-md", selected && "ring-2 ring-accent")}
       style={{ borderLeftColor: student.color }}
     >
       {/* One real button owns "pick this student"; Edit and Remove are siblings, never nested inside it. */}
@@ -63,7 +63,7 @@ export function StudentCard({
           </span>
         </p>
         <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-line" aria-hidden>
-          <div className={clsx("h-full", over ? "bg-warn" : atTarget ? "bg-ok" : "bg-accent")} style={{ width: `${pctOfTarget}%` }} />
+          <div className={clsx("h-full transition-[width] duration-500 ease-out", over ? "bg-warn" : atTarget ? "bg-ok" : "bg-accent")} style={{ width: `${pctOfTarget}%` }} />
         </div>
         {needsOpeningShift && (
           <p className={clsx("mt-1 text-xs", openingShiftSatisfied ? "text-muted" : "font-semibold text-warn")}>

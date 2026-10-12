@@ -67,7 +67,7 @@ export function SchedulePanel(props: {
           </button>
         ))}
       </div>
-      <div id="schedule-view" role="tabpanel" aria-labelledby={`view-tab-${view}`} className="min-h-0 flex-1">
+      <div key={view} id="schedule-view" role="tabpanel" aria-labelledby={`view-tab-${view}`} className="anim-fade-quick min-h-0 flex-1">
         {view === "grid" ? (
           <ScheduleGrid
             settings={props.settings}

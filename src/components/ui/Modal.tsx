@@ -80,7 +80,7 @@ export function Modal({ title, description, onClose, children, footer, variant =
   return (
     <div
       className={clsx(
-        "fixed inset-0 z-40 flex bg-ink/45",
+        "anim-fade fixed inset-0 z-40 flex bg-ink/45",
         variant === "side" ? "items-stretch justify-end" : "items-end justify-center sm:items-center",
       )}
       role="presentation"
@@ -96,8 +96,8 @@ export function Modal({ title, description, onClose, children, footer, variant =
         className={clsx(
           "flex w-full flex-col bg-panel shadow-xl outline-none",
           variant === "side"
-            ? "h-full sm:max-w-md sm:border-l sm:border-line"
-            : clsx("max-h-[92dvh] rounded-t-2xl border border-line sm:rounded-2xl", width),
+            ? "anim-slide-in h-full sm:max-w-md sm:border-l sm:border-line"
+            : clsx("anim-rise max-h-[92dvh] rounded-t-2xl border border-line sm:rounded-2xl", width),
         )}
       >
         <div className="flex items-start justify-between gap-3 border-b border-line p-4">

@@ -184,3 +184,63 @@ h3 {
     transform: scale(1.5);
   }
 }
+
+/* ---------------------------------------------------------------------------
+   MOTION (see .claude/skills/cadence-motion-design/SKILL.md)
+   Every animation here starts from a "hidden-ish" look and ends at the element's NORMAL look, so if
+   animations are switched off (reduced motion, above) the element simply shows normally.
+   Only `opacity` and `transform` move: they are the cheap, smooth ones.
+   --------------------------------------------------------------------------- */
+:root {
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 150ms;
+  --dur-base: 260ms;
+}
+
+/* Fades in (a dialog's dim backdrop, a banner that changed). */
+.anim-fade {
+  animation: anim-fade var(--dur-base) var(--ease-out) both;
+}
+/* A quicker fade for swapping the schedule view (Grid / By student / By day). */
+.anim-fade-quick {
+  animation: anim-fade var(--dur-fast) var(--ease-out) both;
+}
+/* Fades in while rising a few pixels (dialogs and messages settling into place). */
+.anim-rise {
+  animation: anim-rise var(--dur-base) var(--ease-out) both;
+}
+/* The side help panel slides in from the right edge. */
+.anim-slide-in {
+  animation: anim-slide-in var(--dur-base) var(--ease-out) both;
+}
+/* The first ten students in the list arrive one after another (40ms apart); the rest appear together. */
+.stagger > li {
+  animation: anim-rise var(--dur-base) var(--ease-out) both;
+}
+.stagger > li:nth-child(2) { animation-delay: 40ms; }
+.stagger > li:nth-child(3) { animation-delay: 80ms; }
+.stagger > li:nth-child(4) { animation-delay: 120ms; }
+.stagger > li:nth-child(5) { animation-delay: 160ms; }
+.stagger > li:nth-child(6) { animation-delay: 200ms; }
+.stagger > li:nth-child(7) { animation-delay: 240ms; }
+.stagger > li:nth-child(8) { animation-delay: 280ms; }
+.stagger > li:nth-child(9) { animation-delay: 320ms; }
+.stagger > li:nth-child(10) { animation-delay: 360ms; }
+
+@keyframes anim-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes anim-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes anim-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
