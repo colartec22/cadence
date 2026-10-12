@@ -303,7 +303,7 @@ export function ScheduleGrid({
                 <span className="sr-only">Time</span>
               </th>
               {visibleDays.map((day) => (
-                <th key={day} scope="col" className="sticky top-0 z-10 bg-panel p-1.5 text-left text-xs font-semibold text-muted">
+                <th key={day} scope="col" className="sticky top-0 z-10 border-b border-line bg-panel px-1.5 py-2 text-left text-[11px] font-semibold uppercase tracking-widest text-muted">
                   <span aria-hidden>{DAY_LABEL[day]}</span>
                   <span className="sr-only">{DAY_LONG[day]}</span>
                 </th>
@@ -316,8 +316,8 @@ export function ScheduleGrid({
                 <th
                   scope="row"
                   className={clsx(
-                    "sticky left-0 z-10 whitespace-nowrap bg-panel p-1 pr-2 text-right text-xs",
-                    slot % 60 === 0 ? "font-semibold text-ink" : "font-normal text-muted",
+                    "sticky left-0 z-10 whitespace-nowrap bg-panel p-1 pr-2 text-right align-top text-xs",
+                    slot % 60 === 0 ? "border-t border-line/70 font-semibold text-ink" : "border-t border-dashed border-line/40 font-normal text-muted",
                   )}
                 >
                   {formatMinutes(slot)}
@@ -326,7 +326,11 @@ export function ScheduleGrid({
                   const cell = model.get(`${day}|${slot}`)!;
                   const isActive = r === row && c === col;
                   return (
-                    <td key={day} role="gridcell" className="p-[3px] align-middle">
+                    <td
+                      key={day}
+                      role="gridcell"
+                      className={clsx("border-l border-line/50 p-[3px] align-middle", slot % 60 === 0 ? "border-t border-line/70" : "border-t border-dashed border-line/40")}
+                    >
                       <button
                         type="button"
                         ref={(el) => {
@@ -350,8 +354,8 @@ export function ScheduleGrid({
                           activate(day, slot, e.shiftKey);
                         }}
                         className={clsx(
-                          "relative flex h-10 w-full min-w-[56px] items-center gap-0.5 overflow-hidden rounded-md px-1 text-left transition duration-100 ease-out",
-                          cell.closed ? "bg-line/40" : cell.need > 0 ? "bg-gap-bg ring-1 ring-inset ring-gap" : "bg-ok-bg",
+                          "relative flex h-10 w-full min-w-[56px] items-center gap-0.5 overflow-hidden rounded-lg px-1 text-left transition duration-100 ease-out",
+                          cell.closed ? "bg-line/40" : cell.need > 0 ? "bg-gap-bg ring-1 ring-inset ring-gap" : "bg-ok-bg/70",
                           cell.mine && "ring-2 ring-inset ring-accent",
                           inDrag(day, slot) &&
                             (drag?.assign
