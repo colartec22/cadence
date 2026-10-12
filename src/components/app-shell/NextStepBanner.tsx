@@ -21,7 +21,7 @@ export function NextStepBanner({ guidance, onAction }: { guidance: Guidance; onA
   const Icon = guidance.tone === "problem" ? AlertTriangle : guidance.tone === "good" ? CheckCircle2 : guidance.tone === "start" ? Lightbulb : ListChecks;
   return (
     <div key={guidance.tone} role="status" className={clsx("anim-fade flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2 sm:px-6", STYLE[guidance.tone])}>
-      <Icon className={clsx("h-5 w-5 shrink-0", guidance.tone === "problem" ? "text-gap" : guidance.tone === "good" ? "text-ok" : "text-accent")} aria-hidden />
+      <Icon className={clsx("h-5 w-5 shrink-0", guidance.tone === "good" && "anim-pop", guidance.tone === "problem" ? "text-gap" : guidance.tone === "good" ? "text-ok" : "text-accent")} aria-hidden />
       <p className="min-w-0 flex-1 text-sm font-semibold">
         {guidance.title}
         <HelpTip label="more about this" ariaLabel="Read more about this suggestion">

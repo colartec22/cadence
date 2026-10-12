@@ -25,3 +25,12 @@ describe("LogoLoader", () => {
     expect(css).toMatch(/prefers-reduced-motion: reduce[\s\S]*animation-duration: 0\.01ms !important/);
   });
 });
+
+describe("EmptyMark", () => {
+  it("is decoration only and has its float animation defined", async () => {
+    const { EmptyMark } = await import("../components/ui/EmptyMark");
+    const { container } = render(<EmptyMark className="h-16 w-16" />);
+    expect(container.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
+    expect(readFileSync("src/styles/app.css", "utf8")).toContain("@keyframes empty-float");
+  });
+});

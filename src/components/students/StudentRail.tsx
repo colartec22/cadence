@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { Plus, Search, UserPlus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Button } from "../ui/Button";
+import { EmptyMark } from "../ui/EmptyMark";
 import { StudentCard } from "./StudentCard";
 import { summarizeStudent } from "../../features/scheduling/selectors";
 import { weeklyLimit } from "../../features/scheduling/term";
@@ -84,7 +85,7 @@ export function StudentRail({
         ))}
         {!students.length && (
           <li className="rounded-xl border border-dashed border-line p-5 text-center">
-            <UserPlus className="mx-auto h-8 w-8 text-muted" aria-hidden />
+            <EmptyMark className="mx-auto h-16 w-16" />
             <p className="mt-2 font-semibold">No students yet</p>
             <p className="mt-1 text-sm text-muted">Add a student and paste the times they have class. Cadence keeps them out of those times.</p>
             <Button variant="primary" className="mt-3" onClick={onAddNew}>

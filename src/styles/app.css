@@ -244,3 +244,34 @@ h3 {
     transform: translateX(24px);
   }
 }
+
+/* A small "pop" for a good moment, such as the icon when every hour becomes covered. */
+.anim-pop {
+  animation: anim-pop 480ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+@keyframes anim-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+/* EmptyMark (src/components/ui/EmptyMark.tsx): the three dashed bars drift up and down in turn. */
+.empty-float {
+  animation: empty-float 3.2s ease-in-out infinite;
+}
+.empty-float-2 {
+  animation-delay: 0.35s;
+}
+.empty-float-3 {
+  animation-delay: 0.7s;
+}
+@keyframes empty-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
