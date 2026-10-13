@@ -1,4 +1,4 @@
-import { BREAK_WEEKLY_HOURS, DEVOTIONAL } from "./constants";
+import { BREAK_WEEKLY_HOURS, DEVOTIONAL, MIN_SHIFT_MINUTES } from "./constants";
 import type { Day, Minutes, ScheduleSettings } from "./types";
 
 /**
@@ -21,7 +21,17 @@ export function isOnBreak(settings: ScheduleSettings): boolean {
 
 /** Most hours a student may be scheduled this week. */
 export function weeklyLimit(settings: ScheduleSettings): number {
-  return isOnBreak(settings) ? BREAK_WEEKLY_HOURS : settings.weeklyTargetHours;
+  return isOnBreak(settings) ? breakLimit(settings) : settings.weeklyTargetHours;
+}
+
+/** Most hours a student may work in a week during a break: the manager's choice in Rules, or the standard 40. */
+export function breakLimit(settings: ScheduleSettings): number {
+  return settings.breakWeeklyHours ?? BREAK_WEEKLY_HOURS;
+}
+
+/** Shortest shift allowed, in minutes: the manager's choice in Rules, or the standard 2 hours. */
+export function minShiftMinutes(settings: ScheduleSettings): number {
+  return settings.minShiftHours === undefined ? MIN_SHIFT_MINUTES : Math.round(settings.minShiftHours * 60);
 }
 
 /** True for a half-hour box that falls inside Tuesday devotional while the semester is on. */

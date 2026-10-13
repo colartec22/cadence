@@ -208,3 +208,14 @@ export function shiftRuns(
   }
   return runs;
 }
+
+/** Students who need an opening shift and don't have a real one yet. Shared by the server check and the Schedule health panel. */
+export function studentsMissingOpeningShift(
+  students: Student[],
+  assignments: ShiftBlock[],
+  settings: ScheduleSettings,
+): { studentId: string; name: string }[] {
+  return students
+    .filter((s) => s.needsOpeningShift && !hasOpeningShift(s.id, assignments, settings))
+    .map((s) => ({ studentId: s.id, name: s.name }));
+}

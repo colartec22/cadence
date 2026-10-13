@@ -2,14 +2,29 @@ import { useState } from "react";
 import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
 import { formatMinutes } from "../../features/scheduling/time";
+import { BREAK_WEEKLY_HOURS, MIN_SHIFT_MINUTES } from "../../features/scheduling/constants";
+import { breakLimit, minShiftMinutes } from "../../features/scheduling/term";
 import type { ScheduleSettings } from "../../features/scheduling/types";
 
+/** The shortest-shift choices offered, in hours (half an hour up to four). */
+const MIN_SHIFT_CHOICES = [0.5, 1, 1.5, 2, 2.5, 3, 4];
+
+/** A plain-language problem with a typed number of hours (whole or half hours between 1 and 40), or null when it is fine. */
+function hoursProblem(text: string): string | null {
+  const value = Number(text);
+  if (text.trim() === "" || Number.isNaN(value)) return "Type a number of hours, like 19.";
+  if (value < 1 || value > 40) return "Choose between 1 and 40 hours.";
+  if (Math.round(value * 2) / 2 !== value) return "Use whole or half hours, like 19 or 19.5.";
+  return null;
+}
+
 /**
- * The "Rules" popup (opened from the header). Lets the manager change the two
+ * The "Rules" popup (opened from the header). Lets the manager change the
  * office-wide settings that are meant to be edited occasionally, not per
- * student: the weekly hour cap and the closing time. Both are validated
- * live as the manager types/picks, and the Save button is disabled until
- * both are valid — see `hoursError` / `closeError` below.
+ * student: the weekly hour cap, the weekly cap during a break, the shortest
+ * shift, and the closing time. Each is validated live as the manager
+ * types/picks, and the Save button is disabled until all are valid — see
+ * `hoursError` / `breakError` / `closeError` below.
  */
 const CLOSE_OPTIONS = Array.from({ length: 25 }, (_, i) => 12 * 60 + i * 30); // 12:00pm .. 12:00am (midnight)
 
@@ -24,17 +39,13 @@ export function RulesDialog({
   onClose: () => void;
 }) {
   const [hours, setHours] = useState(String(settings.weeklyTargetHours));
+  const [breakHours, setBreakHours] = useState(String(breakLimit(settings)));
+  const [minShiftHours, setMinShiftHours] = useState(minShiftMinutes(settings) / 60);
   const [closeTime, setCloseTime] = useState(settings.closeTime);
 
   const parsed = Number(hours);
-  const hoursError =
-    hours.trim() === "" || Number.isNaN(parsed)
-      ? "Type a number of hours, like 19."
-      : parsed < 1 || parsed > 40
-        ? "Choose between 1 and 40 hours."
-        : Math.round(parsed * 2) / 2 !== parsed
-          ? "Use whole or half hours, like 19 or 19.5."
-          : null;
+  const hoursError = hoursProblem(hours);
+  const breakError = hoursProblem(breakHours);
   const closeError = closeTime <= settings.openTime + 60 ? "The office must be open for at least an hour after it opens." : null;
 
   return (
@@ -49,9 +60,15 @@ export function RulesDialog({
           </Button>
           <Button
             variant="primary"
-            disabled={Boolean(hoursError || closeError)}
+            disabled={Boolean(hoursError || breakError || closeError)}
             onClick={() => {
-              onSave({ weeklyTargetHours: parsed, closeTime });
+              // Only write a choice down when it differs from the standard, so untouched settings stay untouched.
+              onSave({
+                weeklyTargetHours: parsed,
+                closeTime,
+                breakWeeklyHours: Number(breakHours) === BREAK_WEEKLY_HOURS ? undefined : Number(breakHours),
+                minShiftHours: minShiftHours * 60 === MIN_SHIFT_MINUTES ? undefined : minShiftHours,
+              });
               onClose();
             }}
           >
@@ -84,6 +101,51 @@ export function RulesDialog({
               {hoursError}
             </p>
           )}
+        </div>
+
+        <div>
+          <label htmlFor="rule-break-hours" className="block text-sm font-medium">
+            Weekly hour limit during a break
+          </label>
+          <p id="rule-break-hours-help" className="text-xs text-muted">
+            Used when the Semester / Break switch is on Break. Students are usually allowed more hours while classes are out.
+          </p>
+          <input
+            id="rule-break-hours"
+            inputMode="decimal"
+            value={breakHours}
+            onChange={(e) => setBreakHours(e.target.value)}
+            aria-describedby="rule-break-hours-help rule-break-hours-err"
+            aria-invalid={Boolean(breakError)}
+            className="mt-1 w-28 rounded-lg border border-line bg-bg p-2 text-sm"
+          />
+          <span className="ml-2 text-sm text-muted">hours</span>
+          {breakError && (
+            <p id="rule-break-hours-err" role="alert" className="mt-1 text-xs text-gap">
+              {breakError}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="rule-min-shift" className="block text-sm font-medium">
+            Shortest shift allowed
+          </label>
+          <p className="text-xs text-muted">
+            Shorter shifts are flagged as a problem, and &ldquo;Fill schedule for me&rdquo; never makes one. Changing this never deletes a shift.
+          </p>
+          <select
+            id="rule-min-shift"
+            value={minShiftHours}
+            onChange={(e) => setMinShiftHours(Number(e.target.value))}
+            className="mt-1 rounded-lg border border-line bg-bg p-2 text-sm"
+          >
+            {MIN_SHIFT_CHOICES.map((h) => (
+              <option key={h} value={h}>
+                {h === 1 ? "1 hour" : `${h} hours`}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>

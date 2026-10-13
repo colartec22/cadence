@@ -8,7 +8,8 @@ import { HelpTip } from "../help/HelpTip";
 import { ThemeControl } from "./ThemeControl";
 import type { ThemeChoice } from "../../hooks/useTheme";
 import type { ScheduleSettings } from "../../features/scheduling/types";
-import { BREAK_WEEKLY_HOURS, MIN_STAFF_OPTIONS, OPEN_TIME_OPTIONS } from "../../features/scheduling/constants";
+import { breakLimit } from "../../features/scheduling/term";
+import { MIN_STAFF_OPTIONS, OPEN_TIME_OPTIONS } from "../../features/scheduling/constants";
 import { formatMinutes } from "../../features/scheduling/time";
 
 /**
@@ -100,7 +101,7 @@ export function TopBar({
           <HelpTip label="Semester or break">
             <b>Semester:</b> nobody works during Tuesday devotional (11am–12pm), and the weekly limit is {settings.weeklyTargetHours} hours.
             <br />
-            <b>Break:</b> 11am–12pm on Tuesday is open, and students may work up to {BREAK_WEEKLY_HOURS} hours a week.
+            <b>Break:</b> 11am–12pm on Tuesday is open, and students may work up to {breakLimit(settings)} hours a week.
           </HelpTip>
         </div>
         <Button variant="ghost" aria-expanded={showOptions} aria-controls="plan-options" onClick={() => setShowOptions((v) => !v)}>

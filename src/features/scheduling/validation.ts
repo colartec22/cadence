@@ -39,6 +39,11 @@ function isMinutes(v: unknown): v is number {
   return typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= 24 * 60;
 }
 
+/** True for a number of hours between `min` and `max` (inclusive) that is a whole or half hour, like 19 or 19.5. */
+function isHalfHours(v: unknown, min: number, max: number): v is number {
+  return typeof v === "number" && Number.isFinite(v) && v >= min && v <= max && Math.round(v * 2) / 2 === v;
+}
+
 /** True for one of the five weekday codes the app uses ("mon" to "fri"). */
 function isDay(v: unknown): v is Day {
   return typeof v === "string" && (DAYS as string[]).includes(v);
@@ -68,7 +73,7 @@ function readSettings(input: unknown, errors: string[]): ScheduleSettings | null
     errors.push("Missing settings.");
     return null;
   }
-  const { openTime, closeTime, minStaffPerSlot, slotMinutes, weeklyTargetHours, term } = input;
+  const { openTime, closeTime, minStaffPerSlot, slotMinutes, weeklyTargetHours, term, breakWeeklyHours, minShiftHours } = input;
   if (!isMinutes(openTime) || !isMinutes(closeTime) || openTime >= closeTime) {
     errors.push("Settings: open and close times must be valid, with opening before closing.");
     return null;
@@ -85,8 +90,26 @@ function readSettings(input: unknown, errors: string[]): ScheduleSettings | null
     errors.push("Settings: the weekly hour target must be between 0 and 40.");
     return null;
   }
+  // Optional rules added later: absent in older saved schedules (the standard value is used), but never accepted if present and silly.
+  if (breakWeeklyHours !== undefined && !isHalfHours(breakWeeklyHours, 1, 40)) {
+    errors.push("Settings: the break hour limit must be between 1 and 40 hours, in whole or half hours.");
+    return null;
+  }
+  if (minShiftHours !== undefined && !isHalfHours(minShiftHours, 0.5, 4)) {
+    errors.push("Settings: the shortest shift must be between half an hour and 4 hours, in half-hour steps.");
+    return null;
+  }
   // Schedules saved before the Semester/Break switch existed have no term; they were made for the semester.
-  return { openTime, closeTime, minStaffPerSlot, slotMinutes, weeklyTargetHours, term: term === "break" ? "break" : "semester" };
+  return {
+    openTime,
+    closeTime,
+    minStaffPerSlot,
+    slotMinutes,
+    weeklyTargetHours,
+    term: term === "break" ? "break" : "semester",
+    ...(breakWeeklyHours !== undefined ? { breakWeeklyHours } : {}),
+    ...(minShiftHours !== undefined ? { minShiftHours } : {}),
+  };
 }
 
 /** Checks one student's list of class/blocked times; any bad entry rejects the list. */

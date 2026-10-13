@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useReducer, useRef } from "react";
 import { canAssign, isAssigned, softViolations } from "../features/scheduling/availability";
-import { weeklyLimit } from "../features/scheduling/term";
+import { breakLimit, weeklyLimit } from "../features/scheduling/term";
 import { scheduleVersion } from "../features/scheduling/blocks";
-import { BREAK_WEEKLY_HOURS, DEFAULT_SETTINGS, MAX_STUDENTS, NO_CUTOFF, STUDENT_COLORS } from "../features/scheduling/constants";
+import { DEFAULT_SETTINGS, MAX_STUDENTS, NO_CUTOFF, STUDENT_COLORS } from "../features/scheduling/constants";
 import { buildDemoData } from "../features/scheduling/demo-data";
 import { buildBusy } from "../features/scheduling/parser";
 import { autoFill, normalizeAssignments } from "../features/scheduling/scheduler";
@@ -373,7 +373,7 @@ export function reducer(state: State, action: Action): State {
       const swapped: Doc = { ...doc, settings, assignments: doc.otherTermAssignments, otherTermAssignments: doc.assignments };
       const message =
         settings.term === "break"
-          ? `Showing the break schedule. Tuesday 11am–12pm is open, and students can work up to ${BREAK_WEEKLY_HOURS} hours a week. Your semester schedule is kept as it was.`
+          ? `Showing the break schedule. Tuesday 11am–12pm is open, and students can work up to ${breakLimit(settings)} hours a week. Your semester schedule is kept as it was.`
           : `Showing the semester schedule. Nobody works during Tuesday devotional (11am–12pm), and the limit is ${settings.weeklyTargetHours} hours a week. Your break schedule is kept as it was.`;
       return commit(state, swapped, settings.term === "break" ? "Switched to semester break" : "Switched to semester", {
         lastAutofill: null,

@@ -2,11 +2,10 @@ import { blockedBySlot, daySlots, hasOpeningShift, shiftRuns } from "./availabil
 import {
   MAX_SHIFT_MINUTES,
   MIN_OPENING_SHIFT_MINUTES,
-  MIN_SHIFT_MINUTES,
   OPENING_SHIFT_START,
   RELAXED_DAY_EXTRA_HOURS,
 } from "./constants";
-import { isDevotional, weeklyLimit } from "./term";
+import { isDevotional, minShiftMinutes, weeklyLimit } from "./term";
 import { formatMinutes, formatRange, hoursLabel } from "./time";
 import { DAYS, DAY_LABEL } from "./types";
 import type {
@@ -150,7 +149,7 @@ function preferenceMismatches(student: Student, slotStarts: Minutes[]): number {
 
 /** Soft per-day hour cap so top-up doesn't pile every remaining hour onto one day. Never below one minimum-length shift. */
 function dayCapHours(student: Student, settings: ScheduleSettings): number {
-  return Math.max(MIN_SHIFT_MINUTES / 60, Math.ceil(weeklyLimit(settings) / student.daysPerWeek) + settings.slotMinutes / 60);
+  return Math.max(minShiftMinutes(settings) / 60, Math.ceil(weeklyLimit(settings) / student.daysPerWeek) + settings.slotMinutes / 60);
 }
 
 /** True when `a` should win over `b`: compares the first number, then the next only on a tie, and so on. */
@@ -201,7 +200,7 @@ export function autoFill(
   let plan = new Plan(settings, base);
   const slots = daySlots(settings);
   const slotHours = settings.slotMinutes / 60;
-  const minSlots = Math.ceil(MIN_SHIFT_MINUTES / settings.slotMinutes);
+  const minSlots = Math.ceil(minShiftMinutes(settings) / settings.slotMinutes);
   const maxSlots = Math.max(minSlots, Math.floor(MAX_SHIFT_MINUTES / settings.slotMinutes));
   const explanations: AutoFillExplanation[] = [];
   const limit = weeklyLimit(settings);
@@ -264,7 +263,7 @@ export function autoFill(
     const touches = before > 0 || after > 0;
     const splitShift = plan.hoursOn(student.id, day) > 0 && !touches;
     const mergedRun = len + before + after;
-    // Every shift must be at least MIN_SHIFT_MINUTES once joined to any shift it touches.
+    // Every shift must be at least the minimum shift length once joined to any shift it touches.
     if (mergedRun < minSlots) return null;
 
     let score = 0;
@@ -330,7 +329,7 @@ export function autoFill(
     if (!placed) {
       openingShiftUnmet.push({
         studentId: student.id,
-        reason: `No day has ${hoursLabel(Math.max(MIN_OPENING_SHIFT_MINUTES, MIN_SHIFT_MINUTES) / 60)} free in a row from ${formatMinutes(OPENING_SHIFT_START)} (classes, cutoff, lunch or hour limits are in the way).`,
+        reason: `No day has ${hoursLabel(Math.max(MIN_OPENING_SHIFT_MINUTES, minShiftMinutes(settings)) / 60)} free in a row from ${formatMinutes(OPENING_SHIFT_START)} (classes, cutoff, lunch or hour limits are in the way).`,
       });
     }
   }
@@ -400,7 +399,7 @@ export function autoFill(
 
   // ---------------------------------------------------------------------------
   // PHASE 4 — close small shortfalls by moving part of a shift.
-  // Because no shift may be shorter than MIN_SHIFT_MINUTES, a student can end up
+  // Because no shift may be shorter than the minimum shift length, a student can end up
   // a little short (say 18.5 of 19): the last half hour can't be a shift of its
   // own. So we shorten one of their automatic shifts and give them a new, longer
   // shift elsewhere, so the total comes out exact. The part we shorten must be
@@ -492,7 +491,7 @@ export function autoFill(
         start,
         end,
         phase: "top-up",
-        reason: `${moved}${DAY_LABEL[move.day]} ${formatRange(start, end)} so ${student.name} reaches ${aim} hours without a shift under ${hoursLabel(MIN_SHIFT_MINUTES / 60)}.`,
+        reason: `${moved}${DAY_LABEL[move.day]} ${formatRange(start, end)} so ${student.name} reaches ${aim} hours without a shift under ${hoursLabel(minShiftMinutes(settings) / 60)}.`,
       });
     }
   }
@@ -501,7 +500,7 @@ export function autoFill(
     .filter((student) => plan.hours(student.id) < aim)
     .map((student) => ({
       studentId: student.id,
-      reason: `${student.name}'s classes, cutoff, lunch, days-per-week and the ${MIN_SHIFT_MINUTES / 60}-hour minimum shift leave room for only ${plan.hours(student.id)} of ${aim} hours.`,
+      reason: `${student.name}'s classes, cutoff, lunch, days-per-week and the ${minShiftMinutes(settings) / 60}-hour minimum shift leave room for only ${plan.hours(student.id)} of ${aim} hours.`,
     }));
 
   return {

@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Info, Plus } from "lucide-react";
 import { HelpTip } from "../help/HelpTip";
-import { assignedHours } from "../../features/scheduling/availability";
-import { buildCoverageSlots, buildGapRanges, summarizeCoverage } from "../../features/scheduling/coverage";
+import { assignedHours, studentsMissingOpeningShift } from "../../features/scheduling/availability";
+import { buildCoverageSlots, buildGapRanges, summarizeCoverage, uncoveredStaffHours } from "../../features/scheduling/coverage";
 import { describeGap, suggestFillers } from "../../features/scheduling/issues";
 import { weeklyLimit } from "../../features/scheduling/term";
 import { formatRange, hoursLabel } from "../../features/scheduling/time";
@@ -71,6 +71,9 @@ export function InsightsPanel({
   const nameOf = (id: string) => students.find((s) => s.id === id)?.name ?? "Someone";
   const atTarget = students.filter((s) => assignedHours(s.id, assignments, settings) >= weeklyLimit(settings)).length;
   const emptyHalfHours = summary.totalSlots - summary.fullyStaffedSlots;
+  // The two headline numbers also used by the server check (same functions, so they can never disagree).
+  const missingStaffHours = uncoveredStaffHours(coverage, settings);
+  const missingOpeners = studentsMissingOpeningShift(students, assignments, settings);
   const problems = issues.filter((i) => !i.overridden);
   const warnings = issues.filter((i) => i.overridden);
   const allGood = emptyHalfHours === 0 && problems.length === 0;
@@ -138,6 +141,27 @@ export function InsightsPanel({
           />
 
           <dl className="grid grid-cols-2 gap-2 text-sm">
+            <div className="rounded-xl border border-line p-3">
+              <dt className="text-xs text-muted">
+                Hours still missing
+                <HelpTip label="Hours still missing" align="right">
+                  Add up every hour where someone is needed but nobody is there. If you need 2 people and only 1 works for an hour, that is 1 hour missing.
+                </HelpTip>
+              </dt>
+              <dd className={clsx("font-display text-xl font-semibold", missingStaffHours > 0 ? "text-gap" : "text-ok")}>{hoursLabel(missingStaffHours)}</dd>
+            </div>
+            <div className="rounded-xl border border-line p-3">
+              <dt className="text-xs text-muted">
+                Opening shifts missing
+                <HelpTip label="Opening shifts missing" align="right">
+                  Some students must open the office with a shift that starts at 7:00am. This counts the ones who don&apos;t have it yet.
+                </HelpTip>
+              </dt>
+              <dd className={clsx("font-display text-xl font-semibold", missingOpeners.length > 0 ? "text-gap" : "text-ok")}>
+                {missingOpeners.length}
+                {missingOpeners.length > 0 && <span className="block text-sm font-normal text-muted">{missingOpeners.map((s) => s.name).join(", ")}</span>}
+              </dd>
+            </div>
             <div className="rounded-xl border border-line p-3">
               <dt className="text-xs text-muted">Students at their hours</dt>
               <dd className="font-display text-xl font-semibold">

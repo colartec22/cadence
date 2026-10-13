@@ -32,7 +32,8 @@ Superseded. Kept at `archive/shift-coverage-planner-v1.html`. See `docs/AUDIT.md
 - [x] Deploy the website to GitHub Pages with automatic checks on every pull request (`docs/AUDIT.md` Part 11)
 - [ ] Choose a host for the server code (GitHub Pages can't run it; Netlify is not used for now), set its secrets (`MANAGER_PASSCODE`, `AUTOMATION_URL`, `AUTOMATION_SECRET`, `SCHEDULER_SECRET`, `ALLOWED_ORIGINS`), then set the repository variable `VITE_AUTOMATION_API_URL`
 - [ ] Give Cadence its own web address (a GitHub organization for the team, or a custom domain), so other Pages sites on the same account can't read its saved data (`docs/GITHUB-SETTINGS.md`, "Shared address")
-- [ ] Show `uncoveredStaffHours` and `openingShiftMissing` in Schedule health (front end; the numbers already exist)
+- [x] Show `uncoveredStaffHours` and `openingShiftMissing` in Schedule health ("More numbers"), sharing code with the server check
+- [x] Rules dialog: weekly hour limit during a break and shortest shift allowed are now settings (were fixed constants)
 - [ ] Run the n8n templates against a live n8n (James is standing up hosting/credentials/AI provider)
 - [x] Declutter the header, banner and student cards: one visible primary action, icon-only secondary actions, settings collapsed by default, less always-on text (`docs/DECISIONS.md` 2026-09-23)
 - [x] "Paste existing shifts": import a schedule written as plain text (the engagement letter's supervisor-text case), previewed line by line, rule-checked, one Undo step (`shift-import.ts`)

@@ -92,6 +92,16 @@ export function summarizeCoverage(coverage: CoverageSlot[], settings: ScheduleSe
   };
 }
 
+/**
+ * How many hours of staffing are missing in total. If 2 people are needed and only 1 works for one
+ * hour, that is 1 staff-hour missing. Zero means every box has enough people. Shared by the
+ * server check (`evaluate.ts`) and the Schedule health panel so both always give the same number.
+ */
+export function uncoveredStaffHours(coverage: CoverageSlot[], settings: ScheduleSettings): number {
+  const missingPersonSlots = coverage.reduce((sum, slot) => sum + Math.max(0, slot.minRequired - slot.assignedStudentIds.length), 0);
+  return (missingPersonSlots * settings.slotMinutes) / 60;
+}
+
 /** A day's position in the week (Monday = 0), for sorting things Monday to Friday. */
 export function dayLabelOrder(day: Day): number {
   return DAYS.indexOf(day);

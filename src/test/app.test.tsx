@@ -932,6 +932,25 @@ describe("rules dialog", () => {
   });
 });
 
+describe("rules dialog: break limit and shortest shift", () => {
+  it("saves a new break hour limit and shows it when switching to Break", async () => {
+    const { user } = boot();
+    await user.click(screen.getByRole("button", { name: "Rules" }));
+    const dialog = screen.getByRole("dialog", { name: "Rules" });
+    const breakHours = within(dialog).getByLabelText(/weekly hour limit during a break/i);
+    await user.clear(breakHours);
+    await user.type(breakHours, "100");
+    expect(within(dialog).getByRole("alert").textContent).toMatch(/between 1 and 40/);
+    expect((within(dialog).getByRole("button", { name: "Save rules" }) as HTMLButtonElement).disabled).toBe(true);
+    await user.clear(breakHours);
+    await user.type(breakHours, "30");
+    await user.selectOptions(within(dialog).getByLabelText(/shortest shift allowed/i), "1");
+    await user.click(within(dialog).getByRole("button", { name: "Save rules" }));
+    await user.click(screen.getByRole("button", { name: "Break" }));
+    expect(screen.getAllByText(/up to 30 hours a week/).length).toBeGreaterThan(0);
+  });
+});
+
 describe("office hours and people needed", () => {
   it("switching to 8am hides the 7am row but never changes anyone's hours", async () => {
     const { user } = boot();

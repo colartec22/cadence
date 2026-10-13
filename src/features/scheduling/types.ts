@@ -121,6 +121,10 @@ export type ScheduleSettings = {
   weeklyTargetHours: number;
   /** Semester or break. Missing (older saved schedules) means "semester". */
   term?: Term;
+  /** Most hours a student may work in a week during a break. Missing means BREAK_WEEKLY_HOURS (40). */
+  breakWeeklyHours?: number;
+  /** Shortest shift allowed, in hours. Missing means MIN_SHIFT_MINUTES (2 hours). */
+  minShiftHours?: number;
 };
 
 /** Explicit dates + timezone are required for recurring calendar export; nothing is guessed. */

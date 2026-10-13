@@ -1,6 +1,6 @@
-import { assignedHours, hasOpeningShift } from "./availability";
+import { assignedHours, studentsMissingOpeningShift } from "./availability";
 import { scheduleVersion } from "./blocks";
-import { buildCoverageSlots, buildGapRanges, summarizeCoverage } from "./coverage";
+import { buildCoverageSlots, buildGapRanges, summarizeCoverage, uncoveredStaffHours } from "./coverage";
 import type { CoverageSummary } from "./coverage";
 import { findIssues, isBlockingIssue } from "./issues";
 import type { GapRange, ScheduleIssue, ScheduleSettings, ShiftBlock, Student } from "./types";
@@ -54,8 +54,6 @@ export function evaluateSchedule(students: Student[], assignments: ShiftBlock[],
   const blockingIssues = issues.filter(isBlockingIssue);
 
   const slots = buildCoverageSlots(assignments, settings);
-  // Each slot may be short by more than one person; add up every missing person-slot, then turn slots into hours.
-  const missingPersonSlots = slots.reduce((sum, slot) => sum + Math.max(0, slot.minRequired - slot.assignedStudentIds.length), 0);
 
   return {
     scheduleVersion: scheduleVersion(assignments),
@@ -64,10 +62,8 @@ export function evaluateSchedule(students: Student[], assignments: ShiftBlock[],
     overriddenWarnings: issues.filter((issue) => !isBlockingIssue(issue)),
     coverage: summarizeCoverage(slots, settings),
     gaps: buildGapRanges(slots),
-    uncoveredStaffHours: (missingPersonSlots * settings.slotMinutes) / 60,
-    openingShiftMissing: students
-      .filter((s) => s.needsOpeningShift && !hasOpeningShift(s.id, assignments, settings))
-      .map((s) => ({ studentId: s.id, name: s.name })),
+    uncoveredStaffHours: uncoveredStaffHours(slots, settings),
+    openingShiftMissing: studentsMissingOpeningShift(students, assignments, settings),
     students: students.map((s) => {
       const hours = assignedHours(s.id, assignments, settings);
       return { studentId: s.id, name: s.name, hours, atTarget: hours >= settings.weeklyTargetHours };
