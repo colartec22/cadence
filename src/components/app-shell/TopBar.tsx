@@ -167,14 +167,10 @@ export function TopBar({
           />
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-christroi-cadence-schedule-updates
-          <Button variant="secondary" onClick={onRebuild} disabled={!hasAutoShifts} title={hasAutoShifts ? "Remakes only the shifts Cadence added. Yours stay." : "There are no automatic shifts yet"}>
-
           <Button variant="secondary" onClick={onImportShifts} disabled={!hasStudents} title={hasStudents ? "Paste a schedule you already wrote as text" : "Add a student first"}>
             Paste existing shifts
           </Button>
-          <Button variant="secondary" onClick={onRebuild} disabled={!hasAutoShifts} title={hasAutoShifts ? "Remakes only the shifts ShiftFit added. Yours stay." : "There are no automatic shifts yet"}>
- master
+          <Button variant="secondary" onClick={onRebuild} disabled={!hasAutoShifts} title={hasAutoShifts ? "Remakes only the shifts Cadence added. Yours stay." : "There are no automatic shifts yet"}>
             Rebuild automatic shifts
           </Button>
           <Button variant="secondary" onClick={onClearShifts} disabled={!hasShifts}>

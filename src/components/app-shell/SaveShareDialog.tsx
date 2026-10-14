@@ -380,15 +380,9 @@ export function SaveShareDialog(props: Props) {
             icon={<Send className="h-4 w-4" aria-hidden />}
             title="Send to Google Calendar"
             help={
- christroi-cadence-schedule-updates
-              client.kind === "n8n"
-                ? "Sends the approved schedule to the shared Google Calendar through your n8n workflow. Running it again updates the same events instead of making duplicates."
-                : "This copy of Cadence isn't connected to Google Calendar, so this only does a practice run: it checks your schedule and shows what would be sent. Nothing leaves your computer."
-
               client.kind === "server"
                 ? "Sends the approved schedule to the shared Google Calendar. Running it again updates the same events instead of making duplicates."
-                : "This copy of ShiftFit isn't connected to Google Calendar, so this only does a practice run: it checks your schedule and shows what would be sent. Nothing leaves your computer."
- master
+                : "This copy of Cadence isn't connected to Google Calendar, so this only does a practice run: it checks your schedule and shows what would be sent. Nothing leaves your computer."
             }
           >
             {/* With a real server: the passcode box, which becomes "Signed in as manager" + Sign out once accepted. */}
@@ -491,9 +485,6 @@ export function SaveShareDialog(props: Props) {
           }}
         >
           <p>
-christroi-cadence-schedule-updates
-            This will create or update {request.events.length} calendar events for {new Set(request.events.map((e) => e.studentId)).size} students. Cadence only sends these shifts. It never asks the calendar to delete anything.
-
             This will create or update {request.events.length} calendar events for {new Set(request.events.map((e) => e.studentId)).size} students. It
             doesn&apos;t delete anything. If older events are left over from shifts you moved, you&apos;ll be asked about them separately.
           </p>
@@ -511,9 +502,8 @@ christroi-cadence-schedule-updates
           }}
         >
           <p>
-            This deletes {oldEvents.length} {oldEvents.length === 1 ? "event" : "events"} (every week of each) that ShiftFit made earlier for shifts that
-            are no longer in the schedule. Students will no longer see them. This can&apos;t be undone from ShiftFit.
-master
+            This deletes {oldEvents.length} {oldEvents.length === 1 ? "event" : "events"} (every week of each) that Cadence made earlier for shifts that
+            are no longer in the schedule. Students will no longer see them. This can&apos;t be undone from Cadence.
           </p>
         </ConfirmDialog>
       )}

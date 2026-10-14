@@ -365,7 +365,6 @@ export function reducer(state: State, action: Action): State {
       if (!outcome.changed) return { ...state, toast: toast(outcome.message) };
       return commit(state, { ...doc, assignments: outcome.assignments }, `Filled a gap with ${student.name}`, { toast: toast(outcome.message) });
     }
-christroi-cadence-schedule-updates
     case "SET_SETTINGS": {
       const settings = { ...doc.settings, ...action.settings };
       const termChanged = (settings.term ?? "semester") !== (doc.settings.term ?? "semester");
@@ -408,9 +407,6 @@ christroi-cadence-schedule-updates
         toast: toast(`Added ${plural((placed * doc.settings.slotMinutes) / 60, "hour")} of pasted shifts.${tail}`),
       });
     }
-    case "SET_SETTINGS":
-      return commit(state, { ...doc, settings: { ...doc.settings, ...action.settings } }, "Changed settings");
-     master
     case "SET_SEMESTER":
       return commit(state, { ...doc, semester: action.semester }, "Changed calendar dates");
     case "AUTOFILL": {
