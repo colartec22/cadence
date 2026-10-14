@@ -64,7 +64,7 @@ function call(path: string, opts: GatewayOptions, init: { body?: unknown; auth?:
 }
 
 describe("switched off until it is fully set up", () => {
-  it("answers 503 while any of the three settings is missing, too short or unsafe", async () => {
+  it("answers 503 to the n8n addresses while any of the three settings is missing, too short or unsafe", async () => {
     const broken: Partial<GatewayOptions>[] = [
       { managerPasscode: undefined },
       { managerPasscode: "x".repeat(MIN_PASSCODE_LENGTH - 1) },
@@ -75,9 +75,16 @@ describe("switched off until it is fully set up", () => {
       { automationUrl: "not a url" },
     ];
     for (const change of broken) {
-      const res = await call("/api/session", options(change));
+      const res = await call("/api/publish", options(change), { body: goodSchedule });
       expect(res.status, JSON.stringify(change)).toBe(503);
     }
+  });
+
+  it("lets a manager sign in with only the passcode set (n8n isn't needed to check a passcode)", async () => {
+    const passcodeOnly = options({ automationUrl: undefined, automationSecret: undefined });
+    expect((await call("/api/session", passcodeOnly)).status).toBe(200);
+    expect((await call("/api/session", options({ managerPasscode: undefined }))).status).toBe(503);
+    expect((await call("/api/session", options({ managerPasscode: "x".repeat(MIN_PASSCODE_LENGTH - 1) }))).status).toBe(503);
   });
 
   it("allows plain http only for a test server on this same computer", () => {
@@ -98,9 +105,9 @@ describe("GET /api/health", () => {
   it("answers without a passcode, says only whether it is set up, and never leaks a setting", async () => {
     const ready = await call("/api/health", options(), { method: "GET", auth: null });
     expect(ready.status).toBe(200);
-    expect(await ready.json()).toEqual({ ok: true, ready: true });
+    expect(await ready.json()).toEqual({ ok: true, ready: true, n8n: true, ocr: false });
     const notReady = await call("/api/health", options({ managerPasscode: undefined }), { method: "GET", auth: null });
-    expect(await notReady.json()).toEqual({ ok: true, ready: false });
+    expect(await notReady.json()).toEqual({ ok: true, ready: false, n8n: false, ocr: false });
     const text = JSON.stringify(await (await call("/api/health", options(), { method: "GET", auth: null })).json());
     for (const secret of [PASSCODE, SECRET, N8N]) expect(text).not.toContain(secret);
   });

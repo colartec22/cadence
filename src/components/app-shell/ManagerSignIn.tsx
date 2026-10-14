@@ -14,7 +14,7 @@ import { signInManager, signOutManager } from "../../services/automation/manager
  * into a short "Signed in as manager" line with a Sign out button. The passcode is kept only while
  * this tab is open (see `services/automation/managerSession.ts`).
  */
-export function ManagerSignIn({ purpose }: { purpose: string }) {
+export function ManagerSignIn({ purpose, serverUrl }: { purpose: string; serverUrl?: string }) {
   const signedIn = useManagerSession();
   const [passcode, setPasscode] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
@@ -25,7 +25,8 @@ export function ManagerSignIn({ purpose }: { purpose: string }) {
   async function handleSubmit() {
     if (!passcode || busy) return;
     setBusy(true);
-    const result = await signInManager(passcode);
+    // `serverUrl` is only given by "Try enhanced reading"; otherwise the usual server address is used.
+    const result = serverUrl === undefined ? await signInManager(passcode) : await signInManager(passcode, serverUrl);
     setBusy(false);
     setProblem(result);
     if (result === null) setPasscode("");

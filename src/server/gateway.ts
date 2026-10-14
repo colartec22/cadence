@@ -4,6 +4,7 @@ import { evaluateSchedule } from "../features/scheduling/evaluate";
 import { validatePersistedState } from "../features/scheduling/validation";
 import { MAX_REMOVALS, buildPublishRequest, validatePublishResponse, validateRemoveResponse } from "../services/automation/contracts";
 import { FailedAttemptLimiter, clientAddress, fail, isAuthorized, json, readBody, readBytes } from "./http";
+import { isOcrConfigured, readWithOcrSpace } from "./ocr";
 
 /**
  * ============================================================================
@@ -25,13 +26,19 @@ import { FailedAttemptLimiter, clientAddress, fail, isAuthorized, json, readBody
  *  - `/api/session`   "is this passcode right?" (used by the sign-in box)
  *  - `/api/publish`   send an approved schedule to Google Calendar
  *  - `/api/remove`    delete old events the manager confirmed (moved or removed shifts)
- *  - `/api/interpret` read a class-schedule screenshot
- *  - `/api/health`    (GET, no passcode) "is the server up and fully set up?" for whoever hosts it. It
- *                     answers only `{ ok: true, ready: true|false }`, never a setting or any student data.
+ *  - `/api/interpret` read a class-schedule screenshot with n8n's AI reader
+ *  - `/api/ocr`       read a class-schedule screenshot with OCR.space ("Try enhanced reading", see `ocr.ts`).
+ *                     A plain GET (no passcode) only answers whether enhanced reading is switched on.
+ *  - `/api/health`    (GET, no passcode) "is the server up and set up?" for whoever hosts it. It answers
+ *                     only yes/no flags, never a setting or any student data.
  *
- * It is one plain function, `handleGateway(Request) -> Response`, so it runs on Netlify Functions
- * (see `netlify/functions/gateway.ts`) or any similar host. Until ALL THREE settings below are set it
- * answers 503 to everything ("fail closed"), so deploying it early can't open anything up.
+ * It is one plain function, `handleGateway(Request) -> Response`, so it runs on Vercel Functions
+ * (see `api/gateway.ts`), Netlify Functions (`netlify/functions/gateway.ts`) or any similar host.
+ * Each address answers 503 ("fail closed") until the settings it needs are set, so deploying it
+ * early can't open anything up:
+ *  - `/api/session` needs only the manager passcode,
+ *  - `/api/ocr` needs the passcode and the OCR.space key,
+ *  - the n8n addresses need the passcode and both n8n settings.
  */
 
 export type GatewayOptions = {
@@ -48,7 +55,9 @@ export type GatewayOptions = {
    * the app is on GitHub Pages and the gateway on Netlify. Empty = only this gateway's own site.
    */
   allowedOrigins?: string[];
-  /** Replaceable only so tests can stand in for n8n without a network. */
+  /** The OCR.space key for "Try enhanced reading" (`/api/ocr`). Missing = that address is switched off. */
+  ocrApiKey?: string;
+  /** Replaceable only so tests can stand in for n8n and OCR.space without a network. */
   fetchImpl?: typeof fetch;
 };
 
@@ -58,23 +67,33 @@ export const MIN_PASSCODE_LENGTH = 12;
 export const MIN_AUTOMATION_SECRET_LENGTH = 16;
 /** Largest schedule we accept: 2 MB is far more than 200 students' worth of shifts (photos are never sent). */
 export const MAX_JSON_BYTES = 2 * 1024 * 1024;
-/** Largest screenshot upload: the 5 MB picture limit plus room for the typed text and form wrapping. */
-export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024 + 64 * 1024;
+/**
+ * Largest screenshot upload: the 4 MB picture limit plus room for the typed text and form wrapping.
+ * It must stay under 4.5 MB, the most Vercel's free plan lets any request carry.
+ */
+export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024 + 64 * 1024;
 /** How long to wait for n8n (it may be creating many calendar events or reading a picture). */
 const AUTOMATION_TIMEOUT_MS = 60_000;
 /** Longest shift id accepted in a removal request (real ones are about 30 characters). */
 const MAX_SHIFT_ID_LENGTH = 200;
 
-const ROUTES = ["/api/session", "/api/publish", "/api/remove", "/api/interpret", "/api/health"] as const;
+const ROUTES = ["/api/session", "/api/publish", "/api/remove", "/api/interpret", "/api/ocr", "/api/health"] as const;
 type Route = (typeof ROUTES)[number];
 
-/** True when all three settings are present, long enough, and the n8n address is a safe one. */
-function isConfigured(options: GatewayOptions): boolean {
-  return (
-    (options.managerPasscode ?? "").length >= MIN_PASSCODE_LENGTH &&
-    (options.automationSecret ?? "").length >= MIN_AUTOMATION_SECRET_LENGTH &&
-    isSafeAutomationUrl(options.automationUrl)
-  );
+/** True when a long enough manager passcode is set. Every address needs this. */
+function hasPasscode(options: GatewayOptions): boolean {
+  return (options.managerPasscode ?? "").length >= MIN_PASSCODE_LENGTH;
+}
+
+/**
+ * True when everything one address needs is set (see the file comment): the passcode always, plus the
+ * OCR.space key for `/api/ocr`, plus a safe n8n address and a long enough n8n secret for the n8n addresses.
+ */
+function isConfigured(route: Route, options: GatewayOptions): boolean {
+  if (!hasPasscode(options)) return false;
+  if (route === "/api/session") return true;
+  if (route === "/api/ocr") return isOcrConfigured(options.ocrApiKey);
+  return (options.automationSecret ?? "").length >= MIN_AUTOMATION_SECRET_LENGTH && isSafeAutomationUrl(options.automationUrl);
 }
 
 /**
@@ -98,6 +117,7 @@ export function gatewayOptionsFromEnv(env: Record<string, string | undefined>, l
     managerPasscode: env.MANAGER_PASSCODE,
     automationUrl: env.AUTOMATION_URL,
     automationSecret: env.AUTOMATION_SECRET,
+    ocrApiKey: env.OCR_SPACE_API_KEY,
     limiter,
     allowedOrigins: parseAllowedOrigins(env.ALLOWED_ORIGINS),
   };
@@ -161,7 +181,7 @@ function answerPreflight(origin: string | null): Response {
     status: 204,
     headers: {
       "access-control-allow-origin": origin,
-      "access-control-allow-methods": "POST",
+      "access-control-allow-methods": "GET, POST",
       "access-control-allow-headers": "authorization, content-type",
       "access-control-max-age": String(CORS_MAX_AGE_SECONDS),
       vary: "Origin",
@@ -182,10 +202,20 @@ async function answer(request: Request, options: GatewayOptions, origin: string 
     const route = ROUTES.find((r) => path === r || path.endsWith(r));
     if (!route) return fail(404, "not_found", "There is nothing at that address.");
     if (request.method === "OPTIONS") return answerPreflight(origin);
-    // The only address that needs no passcode: it reveals nothing but "up" and "set up or not".
-    if (route === "/api/health" && request.method === "GET") return json(200, { ok: true, ready: isConfigured(options) });
+    // The only questions anyone may ask without the passcode. Both reveal nothing but yes/no flags.
+    // "Is enhanced reading switched on?" tells the app whether to show the "Try enhanced reading" button.
+    if (route === "/api/ocr" && request.method === "GET") return json(200, { enabled: isConfigured(route, options) });
+    // "Is the server up, and which parts are set up?" is for whoever hosts it.
+    if (route === "/api/health" && request.method === "GET") {
+      return json(200, {
+        ok: true,
+        ready: isConfigured("/api/session", options),
+        n8n: isConfigured("/api/publish", options),
+        ocr: isConfigured("/api/ocr", options),
+      });
+    }
     if (request.method !== "POST") return fail(405, "method_not_allowed", "Use POST.");
-    if (!isConfigured(options)) return fail(503, "not_configured", "The server hasn't been set up yet.");
+    if (!isConfigured(route, options)) return fail(503, "not_configured", "The server hasn't been set up yet.");
 
     // Too many wrong passcodes from this address: refuse before even looking at this one.
     const address = clientAddress(request);
@@ -210,6 +240,7 @@ function runRoute(route: Route, request: Request, options: GatewayOptions): Prom
   if (route === "/api/health") return fail(405, "method_not_allowed", "Use GET."); // POST to health is a mistake, not a sign-in
   if (route === "/api/publish") return publish(request, options);
   if (route === "/api/remove") return removeOldEvents(request, options);
+  if (route === "/api/ocr") return readWithOcrSpace(request, { apiKey: options.ocrApiKey, fetchImpl: options.fetchImpl });
   return interpret(request, options);
 }
 

@@ -14,6 +14,7 @@ import { gatewayOptionsFromEnv, handleGateway } from "../../src/server/gateway";
  *   MANAGER_PASSCODE   the passcode managers type (12+ characters)
  *   AUTOMATION_URL     the n8n server's address, e.g. https://n8n.example.edu
  *   AUTOMATION_SECRET  the password n8n's webhooks require (16+ random characters)
+ * For "Try enhanced reading" (/api/ocr), only MANAGER_PASSCODE and OCR_SPACE_API_KEY are needed.
  * And, when the app itself is hosted somewhere else (GitHub Pages):
  *   ALLOWED_ORIGINS    that site's address, e.g. https://p00rmans.github.io (comma-separated for several)
  */
@@ -28,5 +29,5 @@ export default async function gateway(request: Request): Promise<Response> {
 
 /** The web addresses this function answers (Netlify reads this). */
 export const config = {
-  path: ["/api/session", "/api/publish", "/api/remove", "/api/interpret", "/api/health"],
+  path: ["/api/session", "/api/publish", "/api/remove", "/api/interpret", "/api/health", "/api/ocr"],
 };
