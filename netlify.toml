@@ -30,7 +30,10 @@
   [headers.values]
     # Content Security Policy, one rule at a time:
     #  default-src 'self'        -> by default, only load things from this same website.
-    #  script-src 'self'         -> only run JavaScript files from this site (no injected <script>).
+    #  script-src 'self' 'wasm-unsafe-eval' -> only run JavaScript files from this site (no injected
+    #                               <script>), plus WebAssembly for the screenshot reader (Tesseract).
+    #                               This does NOT allow eval() or inline scripts.
+    #  worker-src 'self'         -> the screenshot reader's background worker, from this site only.
     #  style-src 'self' 'unsafe-inline' -> our CSS files, plus the small inline colors React sets
     #                               on each student chip.
     #  img-src 'self' data: blob: -> our images, plus profile photos (stored as "data:" text).
@@ -41,7 +44,7 @@
     #  base-uri 'self', form-action 'self' -> links and forms can't be redirected to another site.
     #  frame-ancestors 'none'    -> no other website may show ShiftFit inside a frame (stops
     #                               "clickjacking", where a fake page tricks you into clicking).
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
     # Older browsers' version of frame-ancestors 'none'.
     X-Frame-Options = "DENY"
     # Don't let the browser guess a file's type; use the type the server states.

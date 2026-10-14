@@ -144,8 +144,8 @@ describe("screenshot reading is optional and safe", () => {
   it("checks image type and size before anything is sent", () => {
     expect(checkImageFile(new File(["x"], "a.png", { type: "image/png" }))).toBeNull();
     expect(checkImageFile(new File(["x"], "a.exe", { type: "application/x-msdownload" }))).toMatch(/PNG, JPG or WebP/);
-    const big = new File([new Uint8Array(5 * 1024 * 1024 + 1)], "big.png", { type: "image/png" });
-    expect(checkImageFile(big)).toMatch(/5 MB/);
+    const big = new File([new Uint8Array(4 * 1024 * 1024 + 1)], "big.png", { type: "image/png" });
+    expect(checkImageFile(big)).toMatch(/4 MB/);
   });
 
   it("still parses pasted text locally, and never fakes an AI read without a provider", async () => {
