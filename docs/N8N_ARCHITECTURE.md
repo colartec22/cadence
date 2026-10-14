@@ -59,7 +59,7 @@ flowchart LR
 | `/api/session` | Says whether the passcode is right (used by the sign-in box). |
 | `/api/publish` | Takes the schedule (students without photos or pasted text, shifts, settings, semester) plus the `approvedVersion` the manager approved. Re-checks it with the strict validator and **every scheduling rule** (`evaluateSchedule`), refuses with `409` if it changed since approval, **rebuilds the events itself** with `buildPublishRequest`, sends them to Workflow C, checks the reply. |
 | `/api/remove` | Takes `{ "shiftIds": [...] }` the manager confirmed and asks Workflow C's remove path to delete them. |
-| `/api/interpret` | Passes a screenshot upload (max 5 MB + 64 KB) to Workflow A and checks the reading with `schemas.ts`. |
+| `/api/interpret` | Passes a screenshot upload (max 4 MB + 64 KB, under Vercel's 4.5 MB request limit) to Workflow A and checks the reading with `schemas.ts`. |
 
 Security: the passcode is compared in constant time; after 10 wrong tries from one address in 15 minutes that
 address gets `429` for the rest of the window (counted in the server's memory, so separate server copies count
@@ -112,7 +112,7 @@ Request (multipart form — see `extractSchedule`):
 | `text` | string | pasted/typed text (max 4000 characters), treated as **untrusted data** |
 | `requestId` | string | client-generated id, echoed back in the response |
 
-The client only sends an image that is a PNG, JPEG or WebP under 5 MB, uses a 60-second timeout, and sends no cookies. Enforce the same limits again on the server.
+The client only sends an image that is a PNG, JPEG or WebP under 4 MB, uses a 60-second timeout, and sends no cookies. Enforce the same limits again on the server.
 
 Response body is validated client-side against
 [`schemas.ts`](../src/features/import/schemas.ts) (`validateExtractedSchedule`)

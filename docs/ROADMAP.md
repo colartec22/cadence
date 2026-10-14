@@ -30,8 +30,13 @@ Superseded. Kept at `archive/shift-coverage-planner-v1.html`. See `docs/AUDIT.md
 - [x] Remove old calendar events for moved/removed shifts, only after the manager confirms
 - [x] Password (Header Auth) on every n8n webhook
 - [x] Deploy the website to GitHub Pages with automatic checks on every pull request (`docs/AUDIT.md` Part 11)
-- [ ] Choose a host for the server code (GitHub Pages can't run it; Netlify is not used for now), set its secrets (`MANAGER_PASSCODE`, `AUTOMATION_URL`, `AUTOMATION_SECRET`, `SCHEDULER_SECRET`, `ALLOWED_ORIGINS`), then set the repository variable `VITE_AUTOMATION_API_URL`
-- [ ] Give Cadence its own web address (a GitHub organization for the team, or a custom domain), so other Pages sites on the same account can't read its saved data (`docs/GITHUB-SETTINGS.md`, "Shared address")
+- [x] Vercel set up as a host for the website and the server code (`vercel.json`, `api/`; README "Deploy") — `docs/AUDIT.md` Part 13
+- [ ] Connect the repository on vercel.com and set `MANAGER_PASSCODE` and `OCR_SPACE_API_KEY` (needs a team member's Vercel account; not done from code)
+- [ ] Once n8n is hosted: set `AUTOMATION_URL`, `AUTOMATION_SECRET`, `SCHEDULER_SECRET` and `VITE_AUTOMATION_API_URL=/` on Vercel
+- [x] Read class times from a screenshot in the browser (Tesseract), with "Try enhanced reading" through OCR.space — `docs/AUDIT.md` Part 13
+- [ ] Try enhanced reading against the real OCR.space with a real key (only tested against a stand-in so far)
+- [ ] Try screenshot reading on real Workday screenshots (made-up samples only so far) and tune `ocr-text.ts`
+- [ ] Give Cadence its own web address (a GitHub organization for the team, or a custom domain), so other Pages sites on the same account can't read its saved data (`docs/GITHUB-SETTINGS.md`, "Shared address"). A Vercel deployment already has its own address (`<project>.vercel.app`).
 - [ ] Show `uncoveredStaffHours` and `openingShiftMissing` in Schedule health (front end; the numbers already exist)
 - [ ] Run the n8n templates against a live n8n (James is standing up hosting/credentials/AI provider)
 - [x] Declutter the header, banner and student cards: one visible primary action, icon-only secondary actions, settings collapsed by default, less always-on text (`docs/DECISIONS.md` 2026-09-23)

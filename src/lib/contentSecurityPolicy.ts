@@ -5,7 +5,7 @@
  * A "Content Security Policy" (CSP) tells the browser what this page may load and run. It stops an
  * injected <script> from running even if a bug ever let one into the page.
  *
- * Netlify sends the policy as a header (see `netlify.toml`). GitHub Pages can't send custom headers,
+ * Vercel and Netlify send the policy as a header (see `vercel.json` and `netlify.toml`). GitHub Pages can't send custom headers,
  * so for the github.io site the same policy is written into the page itself as a
  * `<meta http-equiv="Content-Security-Policy">` tag, added by `vite.config.ts` when building.
  *
@@ -20,10 +20,17 @@
 /**
  * The policy, one rule per entry (see `netlify.toml` for what each rule means). `connect-src` allows
  * any https address because the ShiftFit server (the gateway) lives on a different site than github.io.
+ *
+ * `'wasm-unsafe-eval'` lets the browser start WebAssembly, the fast machine code the screenshot reader
+ * (Tesseract) is written in. Despite its name it does NOT allow `eval()` or injected scripts: it only
+ * allows compiling WebAssembly, and our only WebAssembly file is Tesseract's, served from this site.
+ * `worker-src 'self'` lets the reader run in a background "worker" so the page doesn't freeze, but
+ * only from a script file on this site.
  */
 export const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
-  "script-src 'self'",
+  "script-src 'self' 'wasm-unsafe-eval'",
+  "worker-src 'self'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",

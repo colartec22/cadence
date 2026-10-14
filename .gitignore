@@ -11,3 +11,8 @@ dist-ssr/
 coverage/
 *.local
 *.tsbuildinfo
+
+# Vercel: local project link and build output (made by `vercel link` / `vercel build`)
+.vercel/
+# The packed server code `npm run build` makes for Vercel (see src/server/vercel.ts)
+server-dist/

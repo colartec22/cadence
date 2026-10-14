@@ -394,6 +394,42 @@ tested and switched off. Docs (README, GITHUB-SETTINGS, N8N_ARCHITECTURE, ROADMA
 
 ---
 
+## Part 13: Vercel hosting and screenshot reading (2026-10-14)
+
+Asked for by Christroi: host Cadence on Vercel's free Hobby plan, and read class times from screenshots, in the
+browser first (Tesseract) with OCR.space as a fallback. Built as a pull request for James to review, since it changes
+his "GitHub Pages only" decision (`docs/DECISIONS.md`, 2026-10-14). GitHub Pages keeps working unchanged.
+
+| What | How it works | How it was checked |
+| --- | --- | --- |
+| Vercel functions (`api/[route].js`, `api/scheduler/[action].js`) | Thin wrappers that call `src/server/vercel.ts`, packed by `npm run build` into `server-dist/vercel.js`. | **Real bug found and avoided:** the obvious version (TypeScript files importing `src/server/`) built fine with `vercel build` but crashed when called, with `ERR_MODULE_NOT_FOUND`, because this is an ES-module project whose imports have no `.js` ending. With the packed file, a local `vercel build` (Vercel CLI 64.0.2) was run and the built functions were called directly in Node: `/api/ocr` reported on/off correctly, sign-in accepted the right passcode and refused a wrong one, `/api/publish` stayed switched off without n8n, `/api/scheduler/health` answered. `vercel.test.ts` (8 tests). |
+| Vercel's rewritten addresses | Vercel sends `/api/ocr` to `/api/[route]?route=ocr`. `restoreAddress` puts the original address back whichever form arrives (only plain lowercase names). | `vercel.test.ts`: rewritten and normal addresses, odd names ignored, method, headers and body kept. |
+| `vercel.json` | Build command, `dist`, 60-second function limit, the same security headers as `netlify.toml`, a week's caching for `/ocr/` files. | `vercel.test.ts` compares the headers to `netlify.toml` word for word; the local `vercel build` output carried them. |
+| Sign-in without n8n | `/api/session` now needs only `MANAGER_PASSCODE`, so a manager can sign in for enhanced reading before n8n exists. The n8n addresses still need all their settings. | `gateway.test.ts`: the "switched off" test now checks `/api/publish` with each missing setting, plus a new test for passcode-only sign-in. |
+| `/api/ocr` (`src/server/ocr.ts`) | GET answers `{ enabled }` with no passcode; POST needs the passcode, checks the upload (PNG/JPEG, 1 MB max), sends it to OCR.space with engine 2, English, table mode, and returns only `{ text }`. Daily-limit (403/429 or a "maximum" message), `IsErroredOnProcessing`, timeouts and odd replies become plain messages; OCR.space's own wording is never passed on. Nothing is stored or logged. | `ocr-server.test.ts` (7 tests) with a stand-in for OCR.space. **Not tested against the real OCR.space**: this sandbox can't reach it, and there is no key. |
+| Reading in the browser (`src/features/import/ocr/`) | Picture enlarged (to ~2000 px wide, max 3x), grayed, dark mode flipped, contrast stretched; Tesseract (LSTM engine, English "best_int" data) runs in a worker; files served from `/ocr/` on the same site; tesseract.js loaded only on first use. | `ocr.test.ts` (21 tests) for the pixel maths, text clean-up and server client. **Real Tesseract in Chromium** (`npm run test:browser`) on the 3 samples in `test-assets/`: the Workday-style table and the dark-mode phone screenshot were read exactly (about 1.5 s each); the blurry one misread a "9" as "%" and was correctly marked for fixing. No console errors under the real security headers. The main bundle grew 11 KB (316 to 327 KB); Tesseract's own code is a separate 17 KB file, and its ~7 MB engine and data download only when a screenshot is read. |
+| **Bug found by the real-browser check** | The blurry sample's "TTh %:00AM - 10:15AM" was first turned into "00 AM-10:15 AM": a class quietly losing its days and real start time. Now a range can't start inside another time, and a line that looks like a time but can't be fully read is kept from its first day word, marked with a red ✕. Any such line also brings up "Try enhanced reading". | A unit test that failed first (`ocr.test.ts`, "never drops or shortens a half-read time"), then the real-browser check. |
+| Turning text into class times (`ocr-text.ts`) | Fixes digit look-alikes (O/0, l/1) and odd colons only inside times, evens out dashes and "a m", then picks "days + start-end" from each row (days before, after, or on the line above; several patterns per row). Output goes into the class-times box and through the **existing** parser, so typed and read text follow the same rules; the existing review list is the editable preview. | `ocr.test.ts`, including that every line it produces from the samples parses with no errors. |
+| The screen (`ImportPanel.tsx`) | "Use a screenshot instead" always shows (no server needed), or paste a screenshot into the box. Progress bar while reading. "Try enhanced reading" appears only when the server has it on, after a reading, with a line saying the picture goes to OCR.space, and needs the manager passcode; it never runs by itself. When OCR.space is off but the n8n AI reader is configured, the same button uses that instead, so James's reader stays reachable. | `import-panel.test.tsx` (9 tests): progress, results land in the box and the review list, paste, typed text kept (also when typed during a reading), a second reading replaces the first, errors, button hidden/shown, never sent without a click, full sign-in then enhanced flow. |
+| Security policy | Adds `'wasm-unsafe-eval'` (WebAssembly only) and `worker-src 'self'`, in `contentSecurityPolicy.ts`, `netlify.toml` and `vercel.json`. | `privacy.test.ts` still forbids `'unsafe-inline'` and `'unsafe-eval'`; the real-browser check ran under the exact `vercel.json` headers with no violations. |
+| Size limits | Screenshots for the n8n reader: 5 MB down to 4 MB (Vercel refuses requests over 4.5 MB). For OCR.space: shrunk in the browser to under 1,000 KB (PNG first, then JPEG, then smaller). | `automation.test.ts` updated; the enhanced check in Chromium sent a 13 KB PNG. |
+
+**Not done, and why**
+- **No Vercel deploy, preview or `vercel dev`**: this sandbox can't reach vercel.com or OCR.space, and connecting
+  the repository needs a team member's Vercel account. The local `vercel build` and direct function calls above are
+  the closest check possible here. Steps are in the README, "Deploy".
+- **Real OCR.space not tried**, only a stand-in that answers like it. Try it once the key is set (`test-assets/README.md`).
+- **Real Workday screenshots not tried**; the samples are made up. Expect to tune `ocr-text.ts` on real ones.
+- The wrong-passcode lock-out lives in memory, so on Vercel it resets when a function restarts and isn't shared
+  between copies. It slows guessing; the 12-character passcode minimum is the real protection.
+- `npm audit` now reports advisories in Tailwind 3's own build tools (`braces`, `postcss-selector-parser`). They
+  were published after Part 12, aren't caused by this change, and only affect the build machine; the fix is
+  Tailwind 4 (already an optional item on the ROADMAP).
+
+`npm test` (548 passed in 31 files), `npm run lint`, `npm run build` and `npm run test:browser` are clean after this round.
+
+---
+
 ## Readability pass (2026-09-22)
 
 Every file under `src/` now has a plain-language comment explaining what it's for and, in the

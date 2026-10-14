@@ -57,9 +57,10 @@ export function serverBaseUrl(): string | null {
 /**
  * Asks the server whether this passcode is right. Returns null on success, or a plain-language
  * problem to show the manager. The passcode is only remembered if the server accepted it.
+ * `baseUrl` is the server to ask: normally VITE_AUTOMATION_API_URL, but "Try enhanced reading"
+ * passes "" ("this same website") so it also works on Vercel before n8n is set up.
  */
-export async function signInManager(passcode: string): Promise<string | null> {
-  const baseUrl = serverBaseUrl();
+export async function signInManager(passcode: string, baseUrl: string | null = serverBaseUrl()): Promise<string | null> {
   if (baseUrl === null) return "This copy of ShiftFit isn't connected to a server.";
   if (!passcode.trim()) return "Type the manager passcode first.";
   try {

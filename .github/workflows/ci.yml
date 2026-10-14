@@ -39,3 +39,8 @@ jobs:
 
       - name: Build the website (npm run build)
         run: npm run build
+
+      # Reads the sample screenshots in test-assets/ with the real reader in Chrome (already installed
+      # on GitHub's computers), using the site just built. See test-assets/README.md.
+      - name: Read the sample screenshots in a real browser
+        run: node test-assets/check-screenshot-reading.mjs
