@@ -48,7 +48,7 @@ export const FAQ: FaqItem[] = [
     question: "How do I add a student?",
     answer: [
       "Press Add student above the student list. Type their name, then paste their class times into the box. You will see each line checked right away: a green check means Cadence understood it.",
-      "Then choose their preferences (morning or afternoon, how many days a week, when they must leave, lunch) and press Add student.",
+      "Then choose their preferences (morning or afternoon, how many days a week, when they must leave, their breaks) and press Add student.",
     ],
     keywords: ["new", "create", "worker"],
   },
@@ -58,7 +58,7 @@ export const FAQ: FaqItem[] = [
     question: "How should I write class times?",
     answer: [
       "Any of these work, one class per line: MWF 9:00-9:50, TTh 1:00pm-2:15pm, or Tuesday/Thursday 8:00 AM - 9:15 AM. You can also paste the Meeting Patterns column straight from Workday.",
-      "M = Monday, T = Tuesday, W = Wednesday, Th or R = Thursday, F = Friday. Weekend classes aren't part of the Monday to Friday schedule.",
+      "M = Monday, T = Tuesday, W = Wednesday, Th or R = Thursday, F = Friday, S or Sat = Saturday. Sunday classes aren't part of the Monday to Saturday schedule.",
       "An online course with no meeting time, like “Online - Asynchronous” or “TBA”, is fine to paste. It blocks nothing, and Cadence tells you it skipped it.",
     ],
     keywords: ["workday", "paste", "MWF", "TTh", "format"],
@@ -104,6 +104,16 @@ export const FAQ: FaqItem[] = [
     keywords: ["job", "appointment", "practice", "busy", "unavailable", "blocked", "sports"],
   },
   {
+    id: "breaks",
+    topic: "Getting started",
+    question: "How do I give a student a lunch or rest break?",
+    answer: [
+      "In the student's form, under Breaks, pick when the break starts and how long it lasts (15 minutes to 1 hour). Press Add a break for another one, up to three a day.",
+      "Breaks repeat every day. Cadence never schedules the student during a break, and break time doesn't count toward their weekly hours. The schedule works in half hours, so a 15-minute break at 12:00pm keeps 12:00–12:30pm free.",
+    ],
+    keywords: ["lunch", "break", "rest", "meal", "pause"],
+  },
+  {
     id: "am-pm-warning",
     topic: "Getting started",
     question: "Why does it say “No am/pm given”?",
@@ -118,7 +128,7 @@ export const FAQ: FaqItem[] = [
     topic: "The schedule",
     question: "What do the colors and patterns in the grid mean?",
     answer: [
-      "Green: enough people are working. Pink with the words “Need 1”: this half hour still needs someone. Diagonal stripes: the student you picked can't work then (class, lunch, or too late).",
+      "Green: enough people are working. Pink with the words “Need 1”: this half hour still needs someone. Diagonal stripes: the student you picked can't work then (class, break, or too late).",
       "A blue outline means the student you picked is working in that box. The colored badges with letters show who is working. We never use color alone, so you can tell states apart by the words and patterns too.",
     ],
     keywords: ["legend", "pink", "green", "stripes", "colors"],
@@ -159,7 +169,7 @@ export const FAQ: FaqItem[] = [
     topic: "Rules",
     question: "Why won't it let me put someone in a box?",
     answer: [
-      "Something is in the way. It tells you exactly what: the student has class, has to leave before then, is on lunch, is already at their weekly hours, or already works their maximum number of days.",
+      "Something is in the way. It tells you exactly what: the student has class, has to leave before then, is on a break, is already at their weekly hours, or already works their maximum number of days.",
       "Hover over a striped box (or use the keyboard to move onto it) to read the reason.",
     ],
     keywords: ["blocked", "disabled", "can't", "unavailable"],
@@ -169,10 +179,29 @@ export const FAQ: FaqItem[] = [
     topic: "Rules",
     question: "Can someone work more than their weekly hours?",
     answer: [
-      "Class conflicts, late cutoffs and lunch can never be broken. But if a student is at their weekly hour limit or day limit, Cadence asks “Assign anyway?”. If you say yes, the shift is added and a warning stays visible in Schedule health so it isn't forgotten.",
+      "Class conflicts, late cutoffs and breaks can never be broken. But if a student is at their weekly hour limit or day limit, Cadence asks “Assign anyway?”. If you say yes, the shift is added and a warning stays visible in Schedule health so it isn't forgotten.",
       "The default weekly limit is 19 hours. You can change it under Rules. Check your own employer's policy: Cadence doesn't know it.",
     ],
     keywords: ["override", "19", "limit", "hours", "overtime"],
+  },
+  {
+    id: "office-hours",
+    topic: "Rules",
+    question: "How do I change the office hours or open on Saturday?",
+    answer: [
+      "Press Settings at the top. Under Office hours, pick 7:00am–12:00am, 7:00am–5:00pm, 8:00am–12:00am or 8:00am–5:00pm. Under Days open, pick Mon–Fri or Mon–Sat.",
+      "Changing them never deletes a shift. Shifts outside the hours you pick stay saved and still count toward hours; they are just hidden from the grid.",
+    ],
+    keywords: ["hours", "open", "close", "midnight", "saturday", "weekend", "days"],
+  },
+  {
+    id: "text-size",
+    topic: "Rules",
+    question: "Can I make the text bigger?",
+    answer: [
+      "Yes. Press Settings at the top and pick a Text size: Small, Normal, Large or Extra large. Everything grows or shrinks together. Only your browser remembers it, so each person can pick their own.",
+    ],
+    keywords: ["font", "size", "bigger", "smaller", "zoom", "read", "text"],
   },
   {
     id: "people-needed",

@@ -20,9 +20,14 @@ truth, so gaps and conflicts slip through.
 - A welcome screen and a live "what to do next" banner walk a first-time user through the app.
 - Class times are checked **as you type** (`MWF 9:00-9:50`, `Tuesday/Thursday 8:00 AM - 9:15 AM`,
   Workday rows). Anything unclear is flagged, never silently guessed.
-- **Fill schedule for me** places shifts around classes, lunch, cutoffs and weekly hours, in long
+- **Fill schedule for me** places shifts around classes, breaks, cutoffs and weekly hours, in long
   unbroken shifts. Every shift it adds comes with a plain-language reason. It is not AI: the same
   input always gives the same schedule.
+- Works **Monday to Saturday** (or Monday to Friday: *Days open* under **Settings**), with four
+  office-hour choices: 7am or 8am, until 5pm or midnight.
+- Each student can have up to 3 **breaks** (lunch or rest), each with its own start time and length.
+  Nobody is scheduled during a break.
+- **Text size**: Small, Normal, Large or Extra large, under **Settings**. Remembered on this computer.
 - Click a box to assign or clear a half hour. To do a stretch, drag down a column or Shift+click.
 - **Add a whole roster at once**: paste one line per student, or rows copied from a spreadsheet.
   Every line is checked first, and the whole batch is one Undo step.

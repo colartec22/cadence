@@ -103,7 +103,7 @@ describe("autoFill rules", () => {
   });
 
   it("respects a cutoff and lunch", () => {
-    const student = makeStudent({ latestEnd: 10 * 60, lunchStart: 9 * 60 });
+    const student = makeStudent({ latestEnd: 10 * 60, breaks: [{ start: 9 * 60, minutes: 30 }] });
     const r = autoFill([student], [], settings);
     expect(findIssues([student], r.assignments, settings)).toEqual([]);
     expect(r.assignments.every((a) => a.start + 30 <= 10 * 60 && a.start !== 9 * 60)).toBe(true);

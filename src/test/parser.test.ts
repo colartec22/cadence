@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mentionsWeekend, parseClassText, parseDays, parseMeetingLine, parseTime, parseTimeRange } from "../features/scheduling/parser";
+import { mentionsSunday, parseClassText, parseDays, parseMeetingLine, parseTime, parseTimeRange } from "../features/scheduling/parser";
 
 /**
  * Tests for the class-time reader (`features/scheduling/parser.ts`): day lists like "MWF" or
@@ -33,10 +33,19 @@ describe("parseDays", () => {
     expect(parseDays("TT")).toBeNull();
   });
 
-  it("recognises weekend names", () => {
-    expect(mentionsWeekend("Sat")).toBe(true);
-    expect(mentionsWeekend("Saturday/Sunday")).toBe(true);
-    expect(mentionsWeekend("MWF")).toBe(false);
+  it("reads Saturday as a full name, a short name, or S / Sa in a code", () => {
+    expect(parseDays("Saturday")).toEqual(["sat"]);
+    expect(parseDays("Sat")).toEqual(["sat"]);
+    expect(parseDays("MWFS")).toEqual(["mon", "wed", "fri", "sat"]);
+    expect(parseDays("TThSa")).toEqual(["tue", "thu", "sat"]);
+    expect(parseDays("MWF Sat")).toEqual(["mon", "wed", "fri", "sat"]);
+  });
+
+  it("recognises Sunday, which the office is never open on", () => {
+    expect(mentionsSunday("Sun")).toBe(true);
+    expect(mentionsSunday("Saturday/Sunday")).toBe(true);
+    expect(mentionsSunday("Sat")).toBe(false);
+    expect(mentionsSunday("MWF")).toBe(false);
   });
 });
 
@@ -102,9 +111,10 @@ describe("parseMeetingLine", () => {
     expect(line.ok).toBe(true);
     expect(line.start).toBe(540);
   });
-  it("explains weekend classes instead of guessing", () => {
-    expect(parseMeetingLine("Sat 9:00am-11:00am")).toMatchObject({ ok: false });
-    expect(parseMeetingLine("Sat 9:00am-11:00am").warning).toMatch(/weekend/i);
+  it("reads Saturday classes, and explains Sunday ones instead of guessing", () => {
+    expect(parseMeetingLine("Sat 9:00am-11:00am")).toMatchObject({ ok: true, days: ["sat"], start: 540, end: 660 });
+    expect(parseMeetingLine("Sun 9:00am-11:00am")).toMatchObject({ ok: false });
+    expect(parseMeetingLine("Sun 9:00am-11:00am").warning).toMatch(/Sunday/);
   });
   it("rejects junk and over-long lines without hanging", () => {
     expect(parseMeetingLine("hello world").ok).toBe(false);

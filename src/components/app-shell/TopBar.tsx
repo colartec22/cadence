@@ -9,8 +9,14 @@ import { ThemeControl } from "./ThemeControl";
 import type { ThemeChoice } from "../../hooks/useTheme";
 import type { ScheduleSettings } from "../../features/scheduling/types";
 import { breakLimit } from "../../features/scheduling/term";
-import { MIN_STAFF_OPTIONS, OPEN_TIME_OPTIONS } from "../../features/scheduling/constants";
-import { formatMinutes } from "../../features/scheduling/time";
+import { MIN_STAFF_OPTIONS, OFFICE_HOURS_OPTIONS } from "../../features/scheduling/constants";
+import { formatRange } from "../../features/scheduling/time";
+import type { TextSize } from "../../hooks/useTextSize";
+
+/** One office-hours choice as a single value ("420-1440" = 7:00am to midnight), so a button row can hold it. */
+function hoursKey(openTime: number, closeTime: number): string {
+  return `${openTime}-${closeTime}`;
+}
 
 /**
  * The header bar shown on every screen. Deliberately built around ONE clear
@@ -46,6 +52,8 @@ type Props = {
   onOpenShare: () => void;
   theme: ThemeChoice;
   onThemeChange: (t: ThemeChoice) => void;
+  textSize: TextSize;
+  onTextSizeChange: (size: TextSize) => void;
 };
 
 /** The bar across the top: the main "Fill schedule for me" button, undo/redo, help, and the collapsible settings. */
@@ -70,6 +78,8 @@ export function TopBar({
   onOpenShare,
   theme,
   onThemeChange,
+  textSize,
+  onTextSizeChange,
 }: Props) {
   const [showOptions, setShowOptions] = useState(false);
 
@@ -141,15 +151,36 @@ export function TopBar({
           <span className="font-medium">
             Office hours
             <HelpTip label="Office hours">
-              The hours someone must be working. Pick when the office opens. If you pick 8:00am, the 7:00am row is hidden, but
-              any 7:00am shifts already placed still count toward that student&apos;s hours.
+              The hours someone must be working: opening at 7:00am or 8:00am, closing at 5:00pm or midnight (12:00am). Hours outside
+              the choice are hidden from the grid, but any shifts already placed there stay saved and still count toward hours.
             </HelpTip>
           </span>
           <Segmented
             label="Office hours"
-            value={settings.openTime}
-            onChange={(v) => onSettingsChange({ openTime: v })}
-            options={OPEN_TIME_OPTIONS.map((m) => ({ value: m, label: `${formatMinutes(m)}–${formatMinutes(settings.closeTime)}` }))}
+            value={hoursKey(settings.openTime, settings.closeTime)}
+            onChange={(key) => {
+              const [openTime, closeTime] = key.split("-").map(Number);
+              onSettingsChange({ openTime, closeTime });
+            }}
+            options={OFFICE_HOURS_OPTIONS.map((h) => ({ value: hoursKey(h.openTime, h.closeTime), label: formatRange(h.openTime, h.closeTime) }))}
+          />
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <span className="font-medium">
+            Days open
+            <HelpTip label="Days open">
+              Whether the office is open on Saturday. Saturday shows on the grid, counts toward coverage and gets shifts from
+              &ldquo;Fill schedule for me&rdquo; only when it is open.
+            </HelpTip>
+          </span>
+          <Segmented
+            label="Days open"
+            value={settings.openDays ?? "mon-fri"}
+            onChange={(v) => onSettingsChange({ openDays: v })}
+            options={[
+              { value: "mon-fri", label: "Mon–Fri" },
+              { value: "mon-sat", label: "Mon–Sat" },
+            ]}
           />
         </div>
         <div className="flex items-center gap-2 text-sm">
@@ -164,6 +195,23 @@ export function TopBar({
             value={settings.minStaffPerSlot}
             onChange={(v) => onSettingsChange({ minStaffPerSlot: v })}
             options={MIN_STAFF_OPTIONS.map((n) => ({ value: n, label: String(n) }))}
+          />
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <span className="font-medium">
+            Text size
+            <HelpTip label="Text size">Makes all the words in Cadence smaller or bigger. Only this browser remembers it.</HelpTip>
+          </span>
+          <Segmented
+            label="Text size"
+            value={textSize}
+            onChange={onTextSizeChange}
+            options={[
+              { value: "small", label: "Small" },
+              { value: "normal", label: "Normal" },
+              { value: "large", label: "Large" },
+              { value: "xlarge", label: "Extra large" },
+            ]}
           />
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:ml-auto">

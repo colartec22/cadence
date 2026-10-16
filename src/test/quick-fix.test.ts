@@ -69,7 +69,7 @@ describe("the FILL_GAP action", () => {
     const empty = apply(initialState(), { type: "CLEAR_ALL" });
     return { ...empty, past: [], future: [], toast: null };
   };
-  const ana = { name: "Ana K.", preference: "any" as const, daysPerWeek: 5, classText: "", blockedText: "", latestEnd: 24 * 60, lunchStart: null, needsOpeningShift: false };
+  const ana = { name: "Ana K.", preference: "any" as const, daysPerWeek: 5, classText: "", blockedText: "", latestEnd: 24 * 60, breaks: [], needsOpeningShift: false };
 
   it("fills the stretch for that student, as one undoable step, without changing who is selected", () => {
     let s = apply(base(), { type: "ADD_STUDENT", id: "a", input: ana }, { type: "ADD_STUDENT", id: "b", input: { ...ana, name: "Ben P." } });

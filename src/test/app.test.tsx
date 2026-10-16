@@ -80,7 +80,7 @@ describe("first visit", () => {
 describe("guidance banner", () => {
   it("tells you what to do next as the schedule changes", async () => {
     const { user } = boot();
-    expect(banner().textContent).toMatch(/65 hours still need someone/);
+    expect(banner().textContent).toMatch(/82 hours still need someone/);
     await fillSchedule(user);
     expect(banner().textContent).toMatch(/Looks great: every hour is covered/);
     await user.click(screen.getByRole("button", { name: /clear all shifts/i }));
@@ -103,13 +103,13 @@ describe("filling and undoing", () => {
   it("fills the schedule, explains why, and undoes in one step", async () => {
     const { user } = boot();
     await fillSchedule(user);
-    expect(toast().textContent).toMatch(/Added 95 hours of shifts\. Everyone is at their target\./);
+    expect(toast().textContent).toMatch(/Added 114 hours of shifts\. Everyone is at their target\./);
     expect(screen.getByText("What did “Fill schedule for me” do?")).toBeTruthy();
-    expect(screen.getAllByText(/At their hours/).length).toBe(6);
+    expect(screen.getAllByText(/At their hours/).length).toBe(7);
 
     await user.click(screen.getByRole("button", { name: /^undo/i }));
     expect(toast().textContent).toMatch(/Undid: Auto-filled shifts/);
-    expect(banner().textContent).toMatch(/65 hours still need someone/);
+    expect(banner().textContent).toMatch(/82 hours still need someone/);
     await user.click(screen.getByRole("button", { name: /^redo/i }));
     expect(banner().textContent).toMatch(/Looks great/);
   });
@@ -138,9 +138,9 @@ describe("adding a student", () => {
     await user.type(within(dialog).getByLabelText(/student's name/i), "Noa K.");
     const times = within(dialog).getByLabelText(/when does this student have class/i);
     await user.click(times);
-    await user.paste("MWF 9:00-9:50\ngarbled nonsense\nSat 9:00am-11:00am");
+    await user.paste("MWF 9:00-9:50\ngarbled nonsense\nSun 9:00am-11:00am");
     expect(within(dialog).getByText(/1 of 3 lines, 2 need fixing/)).toBeTruthy();
-    expect(within(dialog).getByText(/Weekend meetings aren't part of the Mon–Fri schedule/)).toBeTruthy();
+    expect(within(dialog).getByText(/Sunday isn't part of the Monday to Saturday schedule/)).toBeTruthy();
     expect(within(dialog).getByText(/read as 9:00am–9:50am/)).toBeTruthy();
 
     await user.click(within(dialog).getByRole("button", { name: "Add student" }));
@@ -218,7 +218,7 @@ describe("the schedule grid with a keyboard", () => {
     const { user } = boot();
     const grid = screen.getByRole("grid");
     const cells = within(grid).getAllByRole("button");
-    expect(cells).toHaveLength(170);
+    expect(cells).toHaveLength(204); // 6 days (Mon–Sat) x 34 half hours (7:00am to midnight)
     expect(cells.filter((c) => c.tabIndex === 0)).toHaveLength(1);
 
     const start = cell(/^Monday 7:00am to 7:30am/);
@@ -228,9 +228,9 @@ describe("the schedule grid with a keyboard", () => {
     await user.keyboard("{Home}");
     expect(document.activeElement).toBe(cell(/^Monday 8:00am to 8:30am/));
     await user.keyboard("{End}");
-    expect(document.activeElement).toBe(cell(/^Friday 8:00am to 8:30am/));
+    expect(document.activeElement).toBe(cell(/^Saturday 8:00am to 8:30am/)); // the last open day
     await user.keyboard("{ArrowUp}{ArrowUp}{ArrowUp}{ArrowUp}");
-    expect(document.activeElement).toBe(cell(/^Friday 7:00am to 7:30am/)); // stops at the edge
+    expect(document.activeElement).toBe(cell(/^Saturday 7:00am to 7:30am/)); // stops at the edge
     expect(within(grid).getAllByRole("button").filter((c) => c.tabIndex === 0)).toHaveLength(1);
   });
 
@@ -607,7 +607,7 @@ describe("Save & share", () => {
     await user.click(screen.getByRole("button", { name: /download spreadsheet/i }));
     expect(created.map((b) => b.type)).toEqual(["application/json;charset=utf-8", "text/csv;charset=utf-8"]);
     const backup = JSON.parse(await created[0].text());
-    expect(backup.students).toHaveLength(6);
+    expect(backup.students).toHaveLength(7);
     expect((await created[1].text()).split("\r\n")[0]).toBe("Student,Day,Start,End,Hours");
   });
 
@@ -747,15 +747,15 @@ describe("schedule views", () => {
     const panel = screen.getByRole("tabpanel");
     expect(within(panel).getByText("Troy C.")).toBeTruthy();
     expect(within(panel).getAllByText("8:00am–12:00pm (4 hours)").length).toBe(2); // Mon and Wed
-    expect(within(panel).getAllByText("No shifts yet.").length).toBe(5);
+    expect(within(panel).getAllByText("No shifts yet.").length).toBe(6);
   });
 
-  it("'By day' lists Monday to Friday and says when nobody works", async () => {
+  it("'By day' lists every open day (Monday to Saturday) and says when nobody works", async () => {
     const { user } = boot();
     await user.click(screen.getByRole("tab", { name: "By day" }));
     const panel = screen.getByRole("tabpanel");
-    for (const day of ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]) expect(within(panel).getByRole("heading", { name: day })).toBeTruthy();
-    expect(within(panel).getAllByText("Nobody scheduled.").length).toBe(2); // Tuesday and Thursday
+    for (const day of ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]) expect(within(panel).getByRole("heading", { name: day })).toBeTruthy();
+    expect(within(panel).getAllByText("Nobody scheduled.").length).toBe(3); // Tuesday, Thursday and Saturday
   });
 
   it("copies the schedule as text, and explains kindly if the browser refuses", async () => {
@@ -914,7 +914,7 @@ describe("quick fixes for empty times", () => {
 });
 
 describe("rules dialog", () => {
-  it("changes the weekly hours and the closing time, and rejects nonsense", async () => {
+  it("changes the weekly hours, and rejects nonsense", async () => {
     const { user } = boot();
     await user.click(screen.getByRole("button", { name: "Rules" }));
     const dialog = screen.getByRole("dialog", { name: "Rules" });
@@ -925,10 +925,53 @@ describe("rules dialog", () => {
     expect((within(dialog).getByRole("button", { name: "Save rules" }) as HTMLButtonElement).disabled).toBe(true);
     await user.clear(hours);
     await user.type(hours, "20");
-    await user.selectOptions(within(dialog).getByLabelText(/office closes at/i), "1080");
     await user.click(within(dialog).getByRole("button", { name: "Save rules" }));
     expect(screen.getAllByText(/of 20 hours/).length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: "7:00am–6:00pm" })).toBeTruthy();
+  });
+});
+
+describe("Settings: office hours, days open and text size", () => {
+  /** Opens the collapsed Settings row under the header. */
+  async function openSettings(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByRole("button", { name: /^Settings/ }));
+    return within(document.getElementById("plan-options")!);
+  }
+
+  it("offers the four office-hours choices and changes the grid's rows", async () => {
+    const { user } = boot();
+    const settings = await openSettings(user);
+    const hours = settings.getByRole("group", { name: "Office hours" });
+    expect(within(hours).getAllByRole("button").map((b) => b.textContent)).toEqual([
+      "7:00am–12:00am",
+      "7:00am–5:00pm",
+      "8:00am–12:00am",
+      "8:00am–5:00pm",
+    ]);
+    expect(within(hours).getByRole("button", { name: "7:00am–12:00am" }).getAttribute("aria-pressed")).toBe("true");
+    await user.click(within(hours).getByRole("button", { name: "8:00am–5:00pm" }));
+    expect(within(screen.getByRole("grid")).queryByRole("button", { name: /^Monday 7:00am to 7:30am/ })).toBeNull();
+    expect(within(screen.getByRole("grid")).queryByRole("button", { name: /^Monday 5:00pm to 5:30pm/ })).toBeNull();
+    expect(within(screen.getByRole("grid")).getByRole("button", { name: /^Monday 4:30pm to 5:00pm/ })).toBeTruthy();
+  });
+
+  it("shows Saturday only when the office is open on Saturdays", async () => {
+    const { user } = boot();
+    const grid = () => within(screen.getByRole("grid"));
+    expect(grid().getByRole("button", { name: /^Saturday 7:00am to 7:30am/ })).toBeTruthy();
+    const settings = await openSettings(user);
+    await user.click(within(settings.getByRole("group", { name: "Days open" })).getByRole("button", { name: "Mon–Fri" }));
+    expect(grid().queryByRole("button", { name: /^Saturday/ })).toBeNull();
+    expect(grid().getAllByRole("button")).toHaveLength(170); // 5 days x 34 half hours
+  });
+
+  it("makes the text bigger or smaller, and remembers it in this browser", async () => {
+    const { user } = boot();
+    const settings = await openSettings(user);
+    await user.click(within(settings.getByRole("group", { name: "Text size" })).getByRole("button", { name: "Extra large" }));
+    expect(document.documentElement.style.fontSize).toBe("125%");
+    expect(window.localStorage.getItem("shiftfit:text-size")).toBe("xlarge");
+    await user.click(within(settings.getByRole("group", { name: "Text size" })).getByRole("button", { name: "Small" }));
+    expect(document.documentElement.style.fontSize).toBe("87.5%");
   });
 });
 
@@ -1239,5 +1282,46 @@ describe("student photos", () => {
     await user.click(within(dialog).getByRole("button", { name: "Remove photo" }));
     await user.click(within(dialog).getByRole("button", { name: "Save changes" }));
     expect(document.querySelector(`img[src="${JPEG}"]`)).toBeNull();
+  });
+});
+
+describe("a student's breaks", () => {
+  it("starts with a noon break, lets the manager pick times and lengths, and saves them", async () => {
+    const { user } = boot();
+    await user.click(screen.getByRole("button", { name: "Add student" }));
+    const dialog = screen.getByRole("dialog", { name: /add a student/i });
+    await user.type(within(dialog).getByLabelText(/student's name/i), "Ana B.");
+
+    // The usual lunch is already there: 12:00pm for 30 minutes.
+    expect((within(dialog).getByLabelText("Break 1 starts at") as HTMLSelectElement).value).toBe("720");
+    expect((within(dialog).getByLabelText("and lasts") as HTMLSelectElement).value).toBe("30");
+    expect(within(dialog).queryByText(/lunch/i)).toBeNull();
+
+    // A second, shorter break in the afternoon.
+    await user.click(within(dialog).getByRole("button", { name: /add a break/i }));
+    await user.selectOptions(within(dialog).getByLabelText("Break 2 starts at"), String(15 * 60));
+    await user.selectOptions(within(dialog).getAllByLabelText("and lasts")[1], "15");
+    expect(within(dialog).getByText("3:00pm–3:15pm")).toBeTruthy();
+
+    // Remove the first one, then save.
+    await user.click(within(dialog).getByRole("button", { name: "Remove break 1" }));
+    expect(within(dialog).queryByLabelText("Break 2 starts at")).toBeNull();
+    await user.click(within(dialog).getByRole("button", { name: "Add student" }));
+
+    // Reopen the student: the one 3:00pm break was kept.
+    await user.click(screen.getByRole("button", { name: /edit ana b\./i }));
+    const edit = screen.getByRole("dialog");
+    expect((within(edit).getByLabelText("Break 1 starts at") as HTMLSelectElement).value).toBe(String(15 * 60));
+    expect((within(edit).getByLabelText("and lasts") as HTMLSelectElement).value).toBe("15");
+  });
+
+  it("allows at most three breaks", async () => {
+    const { user } = boot();
+    await user.click(screen.getByRole("button", { name: "Add student" }));
+    const dialog = screen.getByRole("dialog", { name: /add a student/i });
+    await user.click(within(dialog).getByRole("button", { name: /add a break/i }));
+    await user.click(within(dialog).getByRole("button", { name: /add a break/i }));
+    expect(within(dialog).getByLabelText("Break 3 starts at")).toBeTruthy();
+    expect(within(dialog).queryByRole("button", { name: /add a break/i })).toBeNull();
   });
 });

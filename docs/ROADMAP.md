@@ -31,6 +31,7 @@ Superseded. Kept at `archive/shift-coverage-planner-v1.html`. See `docs/AUDIT.md
 - [x] Password (Header Auth) on every n8n webhook
 - [x] Deploy the website to GitHub Pages with automatic checks on every pull request (`docs/AUDIT.md` Part 11)
 - [x] Vercel set up as a host for the website and the server code (`vercel.json`, `api/`; README "Deploy") — `docs/AUDIT.md` Part 13
+- [x] Saturday (Days open setting), four office-hour choices, students' breaks, and a text-size setting (`docs/AUDIT.md` Part 15)
 - [ ] Connect the repository on vercel.com and set `MANAGER_PASSCODE` and `OCR_SPACE_API_KEY` (needs a team member's Vercel account; not done from code)
 - [ ] Once n8n is hosted: set `AUTOMATION_URL`, `AUTOMATION_SECRET`, `SCHEDULER_SECRET` and `VITE_AUTOMATION_API_URL=/` on Vercel
 - [x] Read class times from a screenshot in the browser (Tesseract), with "Try enhanced reading" through OCR.space — `docs/AUDIT.md` Part 13

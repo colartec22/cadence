@@ -17,7 +17,7 @@ import type { Day, SemesterConfig, ShiftBlock, Student } from "../scheduling/typ
 export type { SemesterConfig };
 
 /** JavaScript weekday numbers (Sunday = 0). */
-const JS_WEEKDAY: Record<Day, number> = { mon: 1, tue: 2, wed: 3, thu: 4, fri: 5 };
+const JS_WEEKDAY: Record<Day, number> = { mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
 const MS_PER_DAY = 86_400_000;
 
 /** A number as at least two digits, e.g. 7 -> "07" (calendar files need fixed-width dates and times). */

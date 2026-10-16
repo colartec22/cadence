@@ -2,7 +2,7 @@ import { useEffect, useMemo, useReducer, useRef } from "react";
 import { canAssign, isAssigned, softViolations } from "../features/scheduling/availability";
 import { breakLimit, weeklyLimit } from "../features/scheduling/term";
 import { scheduleVersion } from "../features/scheduling/blocks";
-import { DEFAULT_SETTINGS, MAX_STUDENTS, NO_CUTOFF, STUDENT_COLORS } from "../features/scheduling/constants";
+import { DEFAULT_BREAK_MINUTES, DEFAULT_BREAK_START, DEFAULT_SETTINGS, MAX_STUDENTS, NO_CUTOFF, STUDENT_COLORS } from "../features/scheduling/constants";
 import { buildDemoData } from "../features/scheduling/demo-data";
 import { buildBusy } from "../features/scheduling/parser";
 import { autoFill, normalizeAssignments } from "../features/scheduling/scheduler";
@@ -18,6 +18,7 @@ import type {
   SemesterConfig,
   ShiftBlock,
   Student,
+  WorkBreak,
 } from "../features/scheduling/types";
 
 /**
@@ -57,7 +58,7 @@ export type NewStudentInput = {
   classText: string;
   blockedText: string;
   latestEnd: number;
-  lunchStart: number | null;
+  breaks: WorkBreak[];
   needsOpeningShift: boolean;
 };
 
@@ -145,7 +146,7 @@ function toStudent(id: string, input: NewStudentInput, color: string): Student {
     blockedText: input.blockedText,
     busy: buildBusy(input.classText, input.blockedText).busy,
     latestEnd: input.latestEnd,
-    lunchStart: input.lunchStart,
+    breaks: input.breaks,
     needsOpeningShift: input.needsOpeningShift,
   };
 }
@@ -382,7 +383,7 @@ export function reducer(state: State, action: Action): State {
     }
     case "IMPORT_SHIFTS": {
       // Each pasted shift goes through the same rule checks as a click on the grid. A shift that
-      // breaks a hard rule (class, lunch, cutoff) or a limit is skipped and counted, never forced.
+      // breaks a hard rule (class, break, cutoff) or a limit is skipped and counted, never forced.
       let assignments = doc.assignments;
       let placed = 0;
       let skipped = 0;
@@ -577,7 +578,7 @@ export function useShiftFitStore() {
               classText: r.classText,
               blockedText: "",
               latestEnd: NO_CUTOFF,
-              lunchStart: 12 * 60,
+              breaks: [{ start: DEFAULT_BREAK_START, minutes: DEFAULT_BREAK_MINUTES }],
               needsOpeningShift: false,
             },
           })),

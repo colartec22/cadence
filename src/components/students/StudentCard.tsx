@@ -8,7 +8,7 @@ import type { StudentSummary } from "../../features/scheduling/selectors";
  * One student's card in the left-hand list. Deliberately shows only what a manager needs at a
  * glance while scheduling — name, hours-so-far vs. target, and anything that needs their
  * attention (over hours, missing opening shift, an unfixed problem). Preference, days-per-week,
- * cutoff and lunch are real settings, but they're settings, not status — they live in the Edit
+ * cutoff and breaks are real settings, but they're settings, not status — they live in the Edit
  * form (`StudentFormSheet`), not repeated as a line of text on every card, so a roster of 20
  * doesn't read as a wall of text. Purely display — every number here is pre-computed by
  * `summarizeStudent` in `../../features/scheduling/selectors.ts`.

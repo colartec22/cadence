@@ -38,7 +38,7 @@ function roster(n: number, seed: number): Student[] {
       classText,
       busy: buildBusy(classText, "").busy,
       latestEnd: rand() < 0.3 ? 16 * 60 : 24 * 60,
-      lunchStart: rand() < 0.6 ? 12 * 60 : null,
+      breaks: rand() < 0.6 ? [{ start: 12 * 60, minutes: 30 }] : [],
       needsOpeningShift: rand() < 0.15,
     });
   });

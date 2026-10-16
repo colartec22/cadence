@@ -2,6 +2,7 @@ import { mergeContiguousBlocks } from "./blocks";
 import { assignedHours } from "./availability";
 import { hoursLabel, formatRange } from "./time";
 import { DAYS, DAY_LABEL, DAY_LONG } from "./types";
+import { openDays } from "./days";
 import type { Day, Minutes, ScheduleSettings, ShiftBlock, Student } from "./types";
 
 /**
@@ -43,11 +44,16 @@ export function summarizeByStudent(students: Student[], assignments: ShiftBlock[
   }));
 }
 
-/** Monday to Friday, each with the shifts that day, earliest first. */
+/**
+ * Every day the office is open (Monday to Friday, or to Saturday), each with the shifts that day,
+ * earliest first. A closed day is listed too if shifts are still saved on it, so none go unseen.
+ */
 export function summarizeByDay(students: Student[], assignments: ShiftBlock[], settings: ScheduleSettings): DayShifts[] {
   const byId = new Map(students.map((s) => [s.id, s]));
   const all = lines(assignments, settings.slotMinutes);
-  return DAYS.map((day) => ({
+  const open = openDays(settings);
+  const days = DAYS.filter((day) => open.includes(day) || all.some((l) => l.day === day && byId.has(l.studentId)));
+  return days.map((day) => ({
     day,
     shifts: all
       .filter((l) => l.day === day && byId.has(l.studentId))

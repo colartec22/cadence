@@ -14,15 +14,17 @@ export function makeStudent(overrides: Partial<Student> = {}): Student {
     blockedText: "",
     busy: [],
     latestEnd: NO_CUTOFF,
-    lunchStart: null,
+    breaks: [],
     needsOpeningShift: false,
     ...overrides,
   };
 }
 
-/** The default office rules, with any changes a test asks for. */
+/** The default office rules (Monday to Friday), with any changes a test asks for. */
 export function makeSettings(overrides: Partial<ScheduleSettings> = {}): ScheduleSettings {
-  return { ...DEFAULT_SETTINGS, ...overrides };
+  // The rule tests were written for a Monday–Friday office, so they keep it unless a test asks for
+  // Saturday (`openDays: "mon-sat"`); the app itself starts new schedules on Monday–Saturday.
+  return { ...DEFAULT_SETTINGS, openDays: "mon-fri", ...overrides };
 }
 
 /** One half-hour shift for a student, starting at `start` minutes after midnight. */

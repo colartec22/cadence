@@ -122,7 +122,7 @@ export function BulkAddDialog({
         ))}
 
         <p className="rounded-lg bg-bg p-3 text-xs text-muted">
-          Everyone starts with no time-of-day preference, up to 5 days a week, and lunch at 12:00pm. You can change any of that for each
+          Everyone starts with no time-of-day preference, up to 5 days a week, and a 30-minute break at 12:00pm. You can change any of that for each
           person afterwards with their Edit button.
         </p>
       </div>

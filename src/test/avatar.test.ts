@@ -85,7 +85,7 @@ const input: NewStudentInput = {
   classText: "",
   blockedText: "",
   latestEnd: 24 * 60,
-  lunchStart: null,
+  breaks: [],
   needsOpeningShift: false,
 };
 

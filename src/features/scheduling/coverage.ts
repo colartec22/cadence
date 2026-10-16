@@ -1,6 +1,7 @@
 import { daySlots, staffAt } from "./availability";
 import { isDevotional, weeklyLimit } from "./term";
 import { DAYS } from "./types";
+import { openDays } from "./days";
 import type { CoverageSlot, Day, GapRange, ScheduleSettings, ShiftBlock } from "./types";
 
 /**
@@ -19,7 +20,7 @@ import type { CoverageSlot, Day, GapRange, ScheduleSettings, ShiftBlock } from "
 export function buildCoverageSlots(assignments: ShiftBlock[], settings: ScheduleSettings): CoverageSlot[] {
   const slots = daySlots(settings);
   const out: CoverageSlot[] = [];
-  for (const day of DAYS) {
+  for (const day of openDays(settings)) {
     for (const start of slots) {
       if (isDevotional(day, start, settings)) continue;
       const assignedStudentIds = staffAt(day, start, assignments);
@@ -102,7 +103,7 @@ export function uncoveredStaffHours(coverage: CoverageSlot[], settings: Schedule
   return (missingPersonSlots * settings.slotMinutes) / 60;
 }
 
-/** A day's position in the week (Monday = 0), for sorting things Monday to Friday. */
+/** A day's position in the week (Monday = 0), for sorting things Monday to Saturday. */
 export function dayLabelOrder(day: Day): number {
   return DAYS.indexOf(day);
 }

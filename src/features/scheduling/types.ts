@@ -13,14 +13,15 @@
  *   midnight (9:00am = 540, 5:00pm = 1020). This makes comparing and adding
  *   times plain arithmetic instead of string/Date juggling. `formatMinutes`
  *   in `time.ts` turns a number like 540 back into "9:00am" for display.
- * - The work week only covers Monday–Friday (see `Day` below); there is no
- *   weekend scheduling in this app.
+ * - The week covers Monday–Saturday (see `Day` below). Each office chooses whether it is open
+ *   on Saturday (`ScheduleSettings.openDays`); Sunday is never scheduled.
  */
 
-/** One weekday, Monday through Friday. Short lowercase code used as a key everywhere (grids, lookups, calendar files). */
-export type Day = "mon" | "tue" | "wed" | "thu" | "fri";
+/** One day the app can schedule, Monday through Saturday. Short lowercase code used as a key everywhere (grids, lookups, calendar files). */
+export type Day = "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
 
-export const DAYS: Day[] = ["mon", "tue", "wed", "thu", "fri"];
+/** Every day the app knows about, in week order. Which of them the office is open is a setting: see `openDays` in `days.ts`. */
+export const DAYS: Day[] = ["mon", "tue", "wed", "thu", "fri", "sat"];
 
 export const DAY_LABEL: Record<Day, string> = {
   mon: "Mon",
@@ -28,6 +29,7 @@ export const DAY_LABEL: Record<Day, string> = {
   wed: "Wed",
   thu: "Thu",
   fri: "Fri",
+  sat: "Sat",
 };
 
 export const DAY_LONG: Record<Day, string> = {
@@ -36,6 +38,7 @@ export const DAY_LONG: Record<Day, string> = {
   wed: "Wednesday",
   thu: "Thursday",
   fri: "Friday",
+  sat: "Saturday",
 };
 
 /** Minutes from midnight. See the file banner above for why times are stored this way. */
@@ -47,7 +50,7 @@ export type Preference = "any" | "morning" | "afternoon";
 /**
  * A block of time a student is NOT available to work. Three kinds:
  * - "class": parsed from the student's pasted class schedule text.
- * - "lunch": reserved automatically from `Student.lunchStart` (see below).
+ * - "lunch": only found in very old saved data; breaks are now `Student.breaks` (see below).
  * - "manual": parsed from the "other times they can't work" text field (second job, appointment, etc).
  * The scheduler treats all three as equally off-limits; only the `source` differs (used for messages like "has class" vs "is unavailable").
  */
@@ -74,6 +77,18 @@ export type ShiftBlock = {
   override?: boolean;
 };
 
+/**
+ * A break a student takes from work, e.g. lunch at 12:00pm for 30 minutes. It repeats every day.
+ * Nobody is scheduled during it, and it does not count toward weekly hours. Called "WorkBreak" in the
+ * code because "break" already means the semester break (`Term`).
+ */
+export type WorkBreak = {
+  /** When the break starts, in minutes from midnight. */
+  start: Minutes;
+  /** How long it lasts, in minutes. */
+  minutes: number;
+};
+
 /** One student worker: their name, their weekly rules, and the times they can't work (parsed into `busy`). */
 export type Student = {
   /** Stable unique id, generated once when the student is added (see `src/lib/id.ts`). Never changes, even if the name is edited. */
@@ -94,8 +109,8 @@ export type Student = {
   busy: BusyBlock[];
   /** Latest minute-of-day the student may work until (exclusive end bound). */
   latestEnd: Minutes;
-  /** Start minute of a fixed 30-minute lunch break, or null. */
-  lunchStart: Minutes | null;
+  /** The student's breaks (lunch or rest), the same times every day. Empty means no breaks. */
+  breaks: WorkBreak[];
   /** Requires one contiguous shift starting at OPENING_SHIFT_START (7:00am). */
   needsOpeningShift: boolean;
 };
@@ -106,6 +121,9 @@ export type Student = {
  * up to BREAK_WEEKLY_HOURS (see `term.ts`).
  */
 export type Term = "semester" | "break";
+
+/** The days the office is open: weekdays only, or weekdays plus Saturday. */
+export type OpenDays = "mon-fri" | "mon-sat";
 
 /** The office-wide rules that apply to every student (as opposed to per-student rules, which live on `Student`). Editable in the app's "Rules" dialog. */
 export type ScheduleSettings = {
@@ -121,6 +139,8 @@ export type ScheduleSettings = {
   weeklyTargetHours: number;
   /** Semester or break. Missing (older saved schedules) means "semester". */
   term?: Term;
+  /** Whether the office is open Monday–Friday or Monday–Saturday. Missing (older saved schedules) means Monday–Friday. */
+  openDays?: OpenDays;
   /** Most hours a student may work in a week during a break. Missing means BREAK_WEEKLY_HOURS (40). */
   breakWeeklyHours?: number;
   /** Shortest shift allowed, in hours. Missing means MIN_SHIFT_MINUTES (2 hours). */
@@ -161,14 +181,14 @@ export type GapRange = {
 /**
  * Why a specific assignment attempt was rejected (used when the manager clicks a grid box,
  * or auto-fill tries a placement). Each code maps to one plain-language message in `availability.ts`.
- * "Hard" rules (class_conflict, unavailable, after_cutoff, lunch_conflict, devotional, already_assigned) can
+ * "Hard" rules (class_conflict, unavailable, after_cutoff, break_conflict, devotional, already_assigned) can
  * never be overridden. "Soft" rules (over_weekly_target, over_max_days) can be, with a confirmation.
  */
 export type ConstraintViolationCode =
   | "class_conflict"
   | "unavailable"
   | "after_cutoff"
-  | "lunch_conflict"
+  | "break_conflict"
   | "devotional"
   | "over_weekly_target"
   | "over_max_days"
@@ -184,7 +204,7 @@ export type ScheduleIssueCode =
   | "class_conflict"
   | "unavailable"
   | "after_cutoff"
-  | "lunch_conflict"
+  | "break_conflict"
   | "devotional"
   | "shift_too_short"
   | "over_weekly_target"
