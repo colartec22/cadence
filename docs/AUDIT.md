@@ -451,6 +451,32 @@ secrets or key files in its history, but its default branch is a stale feature b
 **Not verified:** anything against a real Google Calendar, n8n or the Claude API (`local-reader` has never called
 Claude); real phones, slow networks or screen readers; the Pages deploy of these changes (it runs on merge).
 
+## Part 15: Saturday, office-hour choices, breaks and text size (2026-10-16)
+
+Asked for by Christroi. Built on James's `integrate-troi-ocr` branch, as a pull request for James and Jared to
+review, because it changes shared files (`types.ts`, the store, `App.tsx`, `app.test.tsx`).
+
+| What | How it works | How it was checked |
+| --- | --- | --- |
+| **Saturday** | `Day` now includes `"sat"`. A new setting, **Days open** (Mon–Fri or Mon–Sat, in Settings), decides which days the grid, auto-fill, coverage, "opening shift" and "By day" use (`days.ts`, the only place that decides). New schedules open Mon–Sat; a schedule saved before this has no setting and stays Mon–Fri, so nothing moves. "Sat", "SA" and "Saturday" are read in class times; Sunday is still refused with a plain message. Calendar files put Saturday shifts on real Saturdays. Days per week now goes up to 6. | `saturday-and-breaks.test.ts` (auto-fill uses Saturday only when open, Saturday classes respected, opening shift, "By day" never hides saved Saturday shifts, `.ics` dates, saved data and screenshot reader accept 6 days but not 7); `parser.test.ts`; `coverage.test.ts`; app test: End key reaches Saturday. |
+| **Office hours** | Settings shows four choices: 7:00am–12:00am, 7:00am–5:00pm, 8:00am–12:00am, 8:00am–5:00pm (`OFFICE_HOURS_OPTIONS`), replacing the separate opening-time choice. The closing-time box in "Rules" was removed so there is one place to set hours. | App test "Settings: office hours, days open and text size" (choosing 8–5 removes the 7am and 5pm rows). |
+| **Breaks** (replaces the single "lunch" time) | Each student has 0–3 breaks, each with a start time (every half hour, 6:00am–11:30pm) and a length (15, 30, 45 minutes or 1 hour), edited in the student form (`BreakEditor.tsx`). Nobody is scheduled during a break and break time is never counted as worked. Because the grid is in half hours, a 15-minute break keeps its whole half hour free (the help tip says so). The conflict code is now `break_conflict` ("is on a break"). Old saves and old screenshot-reader answers with `lunchStart` become one 30-minute break at that time. | `saturday-and-breaks.test.ts` (old saves converted, impossible break lists refused, auto-fill leaves every break free, reader accepts both forms); `scheduling.test.ts` / `issues.test.ts` break tests; app test "a student's breaks" (add, change, remove, saved). |
+| **Text size** | Settings → Text size: Small, Normal, Large, Extra large (87.5–125%). It changes the page's base font size, and every size in the app is in `rem`, so everything grows together. Saved in this browser only, like the theme (`useTextSize.ts`). | App test (choice applied to the page and remembered); looked at in Chromium at Normal and Extra large: the Settings row wraps cleanly, nothing overlaps. |
+| Sample roster | A seventh made-up student (Sione F.) with a Saturday class and a 15-minute break, so the sample still fills Monday to Saturday. | App tests updated for the bigger sample (hours, cell counts, backups). |
+
+**Not done, and why**
+- **Break rules by shift length** ("after N hours, a break of M minutes") were asked for earlier but replaced by the
+  simpler request to pick break times; not built.
+- The word "break" now means two things: a student's **break** (lunch or rest) and the **Break** term between
+  semesters (the Semester/Break switch). The code calls the first `WorkBreak` to keep them apart; the screen
+  wording may need a design look.
+- Google Calendar is not connected (Christroi: not needed for now).
+- The n8n templates (`n8n/`) still use Monday–Friday and a single `lunchStart`. n8n is postponed (2026-10-13); the app
+  still accepts `lunchStart` from them and turns it into a break, so nothing breaks. Update them when n8n comes back.
+- Not tried on a real phone or with a screen reader.
+
+`npm test` (602 passed in 37 files), `npm run lint`, `npm run build` and `npm run test:browser` are clean after this round.
+
 ---
 
 ---

@@ -31,10 +31,10 @@ describe("findIssues", () => {
     expect(findIssues([after], shifts, settings)).toHaveLength(1);
   });
 
-  it("flags cutoff and lunch problems separately", () => {
-    const s = makeStudent({ latestEnd: 12 * 60, lunchStart: 10 * 60 });
+  it("flags cutoff and break problems separately", () => {
+    const s = makeStudent({ latestEnd: 12 * 60, breaks: [{ start: 10 * 60, minutes: 30 }] });
     const codes = findIssues([s], run("s1", "mon", 10 * 60, 12 * 60 + 30), settings).map((i) => i.code);
-    expect(codes.sort()).toEqual(["after_cutoff", "lunch_conflict"]);
+    expect(codes.sort()).toEqual(["after_cutoff", "break_conflict"]);
   });
 
   it("flags going over the weekly hours and treats an override as a warning, not a blocker", () => {
@@ -121,7 +121,7 @@ describe("explaining empty times", () => {
     const rows = explainSlot(
       [
         makeStudent({ id: "1", latestEnd: 8 * 60 }),
-        makeStudent({ id: "2", lunchStart: 9 * 60 }),
+        makeStudent({ id: "2", breaks: [{ start: 9 * 60, minutes: 30 }] }),
         makeStudent({ id: "3", daysPerWeek: 1 }),
       ],
       [slot("3", "tue", 9 * 60)],
@@ -129,7 +129,7 @@ describe("explaining empty times", () => {
       "mon",
       9 * 60,
     );
-    expect(rows.map((r) => r.text)).toEqual(["can't stay this late", "on lunch", "only works 1 day"]);
+    expect(rows.map((r) => r.text)).toEqual(["can't stay this late", "on a break", "only works 1 day"]);
   });
 
   it("handles an empty roster kindly", () => {

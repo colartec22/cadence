@@ -3,7 +3,8 @@ import { DEFAULT_SETTINGS } from "../features/scheduling/constants";
 import { buildCoverageSlots, buildGapRanges, summarizeCoverage } from "../features/scheduling/coverage";
 import type { ScheduleSettings, ShiftBlock } from "../features/scheduling/types";
 
-const settings: ScheduleSettings = { ...DEFAULT_SETTINGS, openTime: 9 * 60, closeTime: 11 * 60, minStaffPerSlot: 1 };
+// A Monday–Friday office open 9–11am: small enough to count by hand.
+const settings: ScheduleSettings = { ...DEFAULT_SETTINGS, openTime: 9 * 60, closeTime: 11 * 60, minStaffPerSlot: 1, openDays: "mon-fri" };
 
 describe("gap ranges", () => {
   it("merges consecutive same-day gap slots into one range", () => {
@@ -33,6 +34,12 @@ describe("gap ranges", () => {
     const coverage = buildCoverageSlots([], settings);
     const ranges = buildGapRanges(coverage);
     expect(ranges.length).toBe(5); // one merged range per day
+  });
+
+  it("counts Saturday only when the office is open on Saturdays", () => {
+    expect(buildGapRanges(buildCoverageSlots([], { ...settings, openDays: "mon-sat" })).map((r) => r.day)).toEqual(["mon", "tue", "wed", "thu", "fri", "sat"]);
+    // Older saved schedules have no openDays at all: they stay Monday to Friday.
+    expect(buildGapRanges(buildCoverageSlots([], { ...settings, openDays: undefined })).map((r) => r.day)).not.toContain("sat");
   });
 });
 

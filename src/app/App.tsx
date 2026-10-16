@@ -25,6 +25,7 @@ import { useFirstRun } from "../hooks/useFirstRun";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useShiftFitStore } from "../hooks/useShiftFitStore";
 import { useTheme } from "../hooks/useTheme";
+import { useTextSize } from "../hooks/useTextSize";
 import { clsx } from "../lib/clsx";
 
 /**
@@ -71,6 +72,7 @@ function isTyping(target: EventTarget | null): boolean {
 export function App() {
   const store = useShiftFitStore();
   const { theme, setTheme } = useTheme();
+  const { textSize, setTextSize } = useTextSize();
   const { showWelcome, markWelcomed } = useFirstRun();
   const [dialog, setDialog] = useState<Dialog>(null);
   const [mobileTab, setMobileTab] = useState<MobileTab>("schedule");
@@ -183,6 +185,8 @@ export function App() {
         onOpenShare={() => setDialog({ kind: "share" })}
         theme={theme}
         onThemeChange={setTheme}
+        textSize={textSize}
+        onTextSizeChange={setTextSize}
       />
       <NextStepBanner guidance={guidance} onAction={() => guidance.action && onGuidanceAction(guidance.action.kind)} />
       {store.saveFailed && (

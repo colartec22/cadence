@@ -37,7 +37,7 @@ describe("summarizeByStudent", () => {
 describe("summarizeByDay", () => {
   const days = summarizeByDay([noa, kai], shifts, settings);
 
-  it("always lists Monday to Friday, earliest shift first", () => {
+  it("always lists every open day (here Monday to Friday), earliest shift first", () => {
     expect(days.map((d) => d.day)).toEqual(["mon", "tue", "wed", "thu", "fri"]);
     expect(days[0].shifts.map((s) => s.name)).toEqual(["Noa K.", "Kai P."]); // 8:00 before 9:00
     expect(days[1].shifts).toEqual([]);

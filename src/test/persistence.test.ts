@@ -23,7 +23,7 @@ const validState: PersistedStateV1 = {
       blockedText: "",
       busy: [],
       latestEnd: 17 * 60,
-      lunchStart: null,
+      breaks: [],
       needsOpeningShift: false,
     },
   ],

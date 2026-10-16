@@ -1,4 +1,4 @@
-import { mentionsWeekend, parseDays } from "../../scheduling/parser";
+import { mentionsSunday, parseDays } from "../../scheduling/parser";
 
 /**
  * ============================================================================
@@ -79,9 +79,9 @@ export function fixReadingMistakes(line: string): string {
   );
 }
 
-/** True if this one word names school days ("MWF", "TTh", "Tuesday/Thursday") or a weekend day. */
+/** True if this one word names days ("MWF", "TTh", "Tuesday/Thursday", "Sat") or Sunday. */
 function isDayWord(word: string): boolean {
-  return parseDays(word) !== null || mentionsWeekend(word);
+  return parseDays(word) !== null || mentionsSunday(word);
 }
 
 /**

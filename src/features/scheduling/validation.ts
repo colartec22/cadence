@@ -1,4 +1,4 @@
-import { MAX_ASSIGNMENTS, MAX_STUDENTS, STUDENT_COLORS } from "./constants";
+import { DEFAULT_BREAK_MINUTES, MAX_ASSIGNMENTS, MAX_BREAKS, MAX_DAYS_PER_WEEK, MAX_STUDENTS, STUDENT_COLORS } from "./constants";
 import { isValidAvatar } from "../../lib/image";
 import { isIsoDate, isValidTimeZone } from "./time";
 import { DAYS } from "./types";
@@ -10,6 +10,7 @@ import type {
   SemesterConfig,
   ShiftBlock,
   Student,
+  WorkBreak,
 } from "./types";
 
 /**
@@ -44,7 +45,7 @@ function isHalfHours(v: unknown, min: number, max: number): v is number {
   return typeof v === "number" && Number.isFinite(v) && v >= min && v <= max && Math.round(v * 2) / 2 === v;
 }
 
-/** True for one of the five weekday codes the app uses ("mon" to "fri"). */
+/** True for one of the six day codes the app uses ("mon" to "sat"). */
 function isDay(v: unknown): v is Day {
   return typeof v === "string" && (DAYS as string[]).includes(v);
 }
@@ -73,7 +74,7 @@ function readSettings(input: unknown, errors: string[]): ScheduleSettings | null
     errors.push("Missing settings.");
     return null;
   }
-  const { openTime, closeTime, minStaffPerSlot, slotMinutes, weeklyTargetHours, term, breakWeeklyHours, minShiftHours } = input;
+  const { openTime, closeTime, minStaffPerSlot, slotMinutes, weeklyTargetHours, term, breakWeeklyHours, minShiftHours, openDays } = input;
   if (!isMinutes(openTime) || !isMinutes(closeTime) || openTime >= closeTime) {
     errors.push("Settings: open and close times must be valid, with opening before closing.");
     return null;
@@ -109,7 +110,50 @@ function readSettings(input: unknown, errors: string[]): ScheduleSettings | null
     term: term === "break" ? "break" : "semester",
     ...(breakWeeklyHours !== undefined ? { breakWeeklyHours } : {}),
     ...(minShiftHours !== undefined ? { minShiftHours } : {}),
+    // Schedules saved before Saturday existed have no openDays: they stay Monday to Friday. Anything
+    // other than the two real choices is dropped, which also means Monday to Friday.
+    ...(openDays === "mon-sat" || openDays === "mon-fri" ? { openDays } : {}),
   };
+}
+
+/** Longest break accepted, in minutes. Anything longer is not a break but time off (use "times they can't work"). */
+const MAX_BREAK_MINUTES = 240;
+
+/**
+ * Reads a student's breaks. Newer data has a `breaks` list; data saved before breaks existed has a single
+ * `lunchStart` time (or null), which becomes one 30-minute break, exactly the lunch it used to mean.
+ * Returns the clean, time-ordered list, or null (with an error recorded) when it can't be trusted.
+ */
+function readBreaks(student: Record<string, unknown>, label: string, errors: string[]): WorkBreak[] | null {
+  if (student.breaks === undefined) {
+    if (student.lunchStart === null || student.lunchStart === undefined) return [];
+    if (!isMinutes(student.lunchStart)) {
+      errors.push(`${label}: lunch time is not valid.`);
+      return null;
+    }
+    return [{ start: student.lunchStart, minutes: DEFAULT_BREAK_MINUTES }];
+  }
+  if (!Array.isArray(student.breaks) || student.breaks.length > MAX_BREAKS) {
+    errors.push(`${label}: breaks must be a list of at most ${MAX_BREAKS}.`);
+    return null;
+  }
+  const out: WorkBreak[] = [];
+  for (const b of student.breaks) {
+    const valid =
+      isRecord(b) &&
+      isMinutes(b.start) &&
+      typeof b.minutes === "number" &&
+      Number.isInteger(b.minutes) &&
+      b.minutes > 0 &&
+      b.minutes <= MAX_BREAK_MINUTES &&
+      b.start + b.minutes <= 24 * 60;
+    if (!valid) {
+      errors.push(`${label}: a break time is not valid.`);
+      return null;
+    }
+    out.push({ start: b.start as number, minutes: b.minutes as number });
+  }
+  return out.sort((a, b) => a.start - b.start);
 }
 
 /** Checks one student's list of class/blocked times; any bad entry rejects the list. */
@@ -158,14 +202,14 @@ function readStudents(input: unknown, errors: string[]): Student[] | null {
     // file, so one odd name in the browser's saved data can never wipe out the manager's schedule.
     const cleanName = typeof s.name === "string" ? removeControlCharacters(s.name).trim() : "";
     if (!cleanName || cleanName.length > 80) errors.push(`${label}: name is required (80 characters max).`);
-    if (typeof s.daysPerWeek !== "number" || !Number.isInteger(s.daysPerWeek) || s.daysPerWeek < 1 || s.daysPerWeek > 5) {
-      errors.push(`${label}: days per week must be 1 to 5.`);
+    if (typeof s.daysPerWeek !== "number" || !Number.isInteger(s.daysPerWeek) || s.daysPerWeek < 1 || s.daysPerWeek > MAX_DAYS_PER_WEEK) {
+      errors.push(`${label}: days per week must be 1 to ${MAX_DAYS_PER_WEEK}.`);
     }
     if (!isMinutes(s.latestEnd)) errors.push(`${label}: latest end time is not valid.`);
-    if (s.lunchStart !== null && !isMinutes(s.lunchStart)) errors.push(`${label}: lunch time is not valid.`);
     if (typeof s.needsOpeningShift !== "boolean") errors.push(`${label}: needsOpeningShift must be true or false.`);
+    const breaks = readBreaks(s, label, errors);
     const busy = readBusy(s.busy, label, errors);
-    if (errors.length || busy === null) continue;
+    if (errors.length || busy === null || breaks === null) continue;
     ids.add(s.id as string);
     const preference = s.preference === "morning" || s.preference === "afternoon" ? s.preference : "any";
     const color =
@@ -182,7 +226,7 @@ function readStudents(input: unknown, errors: string[]): Student[] | null {
       blockedText: typeof s.blockedText === "string" ? s.blockedText.slice(0, 5000) : "",
       busy: busy as BusyBlock[],
       latestEnd: s.latestEnd as number,
-      lunchStart: (s.lunchStart as number | null) ?? null,
+      breaks,
       needsOpeningShift: s.needsOpeningShift as boolean,
     });
   }

@@ -6,13 +6,14 @@ import { Avatar } from "../ui/Avatar";
 import { makeAvatar } from "../../lib/image";
 import { ImportPanel } from "../import/ImportPanel";
 import { MeetingReview } from "../import/MeetingReview";
-import { NO_CUTOFF } from "../../features/scheduling/constants";
+import { BreakEditor } from "./BreakEditor";
+import { DEFAULT_BREAK_MINUTES, DEFAULT_BREAK_START, MAX_DAYS_PER_WEEK, NO_CUTOFF } from "../../features/scheduling/constants";
 import { buildBusy } from "../../features/scheduling/parser";
 import { formatMinutes } from "../../features/scheduling/time";
 import { DAY_LONG } from "../../features/scheduling/types";
 import type { ExtractionOutcome } from "../../features/import/schedule-extractor";
 import type { NewStudentInput } from "../../hooks/useShiftFitStore";
-import type { Student } from "../../features/scheduling/types";
+import type { Student, WorkBreak } from "../../features/scheduling/types";
 
 /**
  * The "Add a student" / "Edit student" popup form. Holds its own draft state
@@ -40,15 +41,6 @@ const LATEST_OPTIONS: Opt[] = [
   { value: 23 * 60, label: "11:00pm" },
 ];
 
-const LUNCH_OPTIONS: Opt[] = [
-  { value: null, label: "No lunch break" },
-  { value: 11 * 60, label: "11:00am – 11:30am" },
-  { value: 11 * 60 + 30, label: "11:30am – 12:00pm" },
-  { value: 12 * 60, label: "12:00pm – 12:30pm" },
-  { value: 12 * 60 + 30, label: "12:30pm – 1:00pm" },
-  { value: 13 * 60, label: "1:00pm – 1:30pm" },
-];
-
 const inputCls = "mt-1 w-full rounded-lg border border-line bg-bg p-2 text-sm";
 
 /** If a saved value isn't one of the standard choices, keep it selectable instead of silently changing it. */
@@ -73,7 +65,8 @@ export function StudentFormSheet({
   const [preference, setPreference] = useState<NewStudentInput["preference"]>(student?.preference ?? "any");
   const [daysPerWeek, setDaysPerWeek] = useState(student?.daysPerWeek ?? 5);
   const [latestEnd, setLatestEnd] = useState(student?.latestEnd ?? NO_CUTOFF);
-  const [lunchStart, setLunchStart] = useState<number | null>(student ? student.lunchStart : 12 * 60);
+  // A new student starts with the usual 30-minute lunch at noon; the manager can change or remove it.
+  const [breaks, setBreaks] = useState<WorkBreak[]>(student ? student.breaks : [{ start: DEFAULT_BREAK_START, minutes: DEFAULT_BREAK_MINUTES }]);
   const [needsOpeningShift, setNeedsOpeningShift] = useState(student?.needsOpeningShift ?? false);
   const [classText, setClassText] = useState(student?.classText ?? "");
   const [blockedText, setBlockedText] = useState(student?.blockedText ?? "");
@@ -99,7 +92,7 @@ export function StudentFormSheet({
     if (!ai) return;
     setClassText(ai.meetings.map((m) => `${DAY_LONG[m.day as keyof typeof DAY_LONG]} ${formatMinutes(m.start)}-${formatMinutes(m.end)}`).join("\n"));
     if (ai.constraints.latestEnd != null) setLatestEnd(ai.constraints.latestEnd);
-    if (ai.constraints.lunchStart != null) setLunchStart(ai.constraints.lunchStart);
+    if (ai.constraints.breaks.length) setBreaks(ai.constraints.breaks);
     setNeedsOpeningShift(ai.constraints.needsOpeningShift);
     setPreference(ai.constraints.preference);
     if (ai.constraints.daysPerWeek) setDaysPerWeek(ai.constraints.daysPerWeek);
@@ -131,11 +124,10 @@ export function StudentFormSheet({
   function handleSubmit() {
     setTriedSave(true);
     if (nameError || classError) return;
-    onSave({ name: trimmed, avatar, preference, daysPerWeek, classText, blockedText, latestEnd, lunchStart, needsOpeningShift });
+    onSave({ name: trimmed, avatar, preference, daysPerWeek, classText, blockedText, latestEnd, breaks, needsOpeningShift });
   }
 
   const latestOptions = withCurrent(LATEST_OPTIONS, latestEnd, (v) => formatMinutes(v));
-  const lunchOptions = withCurrent(LUNCH_OPTIONS, lunchStart, (v) => `${formatMinutes(v)} – ${formatMinutes(v + 30)}`);
 
   return (
     <Modal
@@ -275,7 +267,7 @@ export function StudentFormSheet({
               Days they can work each week
             </label>
             <select id="days" value={daysPerWeek} onChange={(e) => setDaysPerWeek(Number(e.target.value))} className={inputCls}>
-              {[1, 2, 3, 4, 5].map((d) => (
+              {Array.from({ length: MAX_DAYS_PER_WEEK }, (_, i) => i + 1).map((d) => (
                 <option key={d} value={d}>
                   {d} {d === 1 ? "day" : "days"}
                 </option>
@@ -299,19 +291,9 @@ export function StudentFormSheet({
               ))}
             </select>
           </div>
-          <div>
-            <label htmlFor="lunch" className="block text-sm font-medium">
-              Lunch break (30 minutes)
-            </label>
-            <select id="lunch" value={lunchStart ?? ""} onChange={(e) => setLunchStart(e.target.value === "" ? null : Number(e.target.value))} className={inputCls}>
-              {lunchOptions.map((o) => (
-                <option key={String(o.value)} value={o.value ?? ""}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
         </fieldset>
+
+        <BreakEditor breaks={breaks} onChange={setBreaks} />
 
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" className="mt-1" checked={needsOpeningShift} onChange={(e) => setNeedsOpeningShift(e.target.checked)} />

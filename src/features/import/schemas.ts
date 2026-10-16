@@ -1,4 +1,6 @@
+import { DEFAULT_BREAK_MINUTES, MAX_BREAKS, MAX_DAYS_PER_WEEK } from "../scheduling/constants";
 import { DAYS } from "../scheduling/types";
+import type { WorkBreak } from "../scheduling/types";
 
 /** Structured, review-required output of AI/OCR schedule extraction. Never applied to state unmodified. */
 export type ExtractedSchedule = {
@@ -8,7 +10,8 @@ export type ExtractedSchedule = {
   meetings: { day: string; start: number; end: number; source: "class" }[];
   constraints: {
     latestEnd: number | null;
-    lunchStart: number | null;
+    /** The student's breaks. Older readers send one `lunchStart` time instead; it becomes a 30-minute break here. */
+    breaks: WorkBreak[];
     needsOpeningShift: boolean;
     preference: "any" | "morning" | "afternoon";
     daysPerWeek: number | null;
@@ -27,6 +30,33 @@ const FULL_DAYS = new Set(DAYS);
 /** True for a whole number of minutes from midnight (0) up to the next midnight (1440). */
 function inDay(v: unknown): v is number {
   return typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= 24 * 60;
+}
+
+/** Longest break accepted from a reader, in minutes (same limit as saved data). */
+const MAX_BREAK_MINUTES = 240;
+
+/**
+ * Reads the breaks a reader found: a `breaks` list of { start, minutes }, or (from older readers) a single
+ * `lunchStart` time, which becomes one 30-minute break. Bad entries are dropped, never guessed at, and at
+ * most MAX_BREAKS are kept. The manager still reviews the result before anything is saved.
+ */
+function readExtractedBreaks(constraints: Record<string, unknown>): WorkBreak[] {
+  if (Array.isArray(constraints.breaks)) {
+    return constraints.breaks
+      .filter(
+        (b): b is { start: number; minutes: number } =>
+          isRecord(b) &&
+          inDay(b.start) &&
+          typeof b.minutes === "number" &&
+          Number.isInteger(b.minutes) &&
+          b.minutes > 0 &&
+          b.minutes <= MAX_BREAK_MINUTES &&
+          (b.start as number) + (b.minutes as number) <= 24 * 60,
+      )
+      .slice(0, MAX_BREAKS)
+      .map((b) => ({ start: b.start, minutes: b.minutes }));
+  }
+  return inDay(constraints.lunchStart) ? [{ start: constraints.lunchStart, minutes: DEFAULT_BREAK_MINUTES }] : [];
 }
 
 /**
@@ -76,13 +106,13 @@ export function validateExtractedSchedule(input: unknown): { ok: true; value: Ex
       meetings: cleanMeetings,
       constraints: {
         latestEnd: inDay(constraints.latestEnd) ? constraints.latestEnd : null,
-        lunchStart: inDay(constraints.lunchStart) ? constraints.lunchStart : null,
+        breaks: readExtractedBreaks(constraints),
         needsOpeningShift: Boolean(constraints.needsOpeningShift),
         preference: ["any", "morning", "afternoon"].includes(constraints.preference as string)
           ? (constraints.preference as ExtractedSchedule["constraints"]["preference"])
           : "any",
         daysPerWeek:
-          typeof constraints.daysPerWeek === "number" && Number.isInteger(constraints.daysPerWeek) && constraints.daysPerWeek >= 1 && constraints.daysPerWeek <= 5
+          typeof constraints.daysPerWeek === "number" && Number.isInteger(constraints.daysPerWeek) && constraints.daysPerWeek >= 1 && constraints.daysPerWeek <= MAX_DAYS_PER_WEEK
             ? constraints.daysPerWeek
             : null,
       },

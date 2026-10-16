@@ -23,7 +23,7 @@ function makeStudent(
   preference: Student["preference"],
   daysPerWeek: number,
   classText: string,
-  opts: Partial<Pick<Student, "latestEnd" | "lunchStart" | "needsOpeningShift" | "blockedText">> = {},
+  opts: Partial<Pick<Student, "latestEnd" | "breaks" | "needsOpeningShift" | "blockedText">> = {},
 ): Student {
   return {
     id,
@@ -35,7 +35,7 @@ function makeStudent(
     blockedText: opts.blockedText ?? "",
     busy: buildBusy(classText, opts.blockedText ?? "").busy,
     latestEnd: opts.latestEnd ?? NO_CUTOFF,
-    lunchStart: opts.lunchStart ?? null,
+    breaks: opts.breaks ?? [],
     needsOpeningShift: opts.needsOpeningShift ?? false,
   };
 }
@@ -57,7 +57,7 @@ export function buildDemoData(): { students: Student[]; assignments: ShiftBlock[
     "morning",
     3,
     "Tuesday/Thursday | 8:00 AM - 9:15 AM | SCB 211\nTuesday/Thursday | 10:00 AM - 10:50 AM | STC 190\nTuesday/Thursday | 1:00 PM - 1:50 PM | STC 190\nTuesday/Thursday | 3:00 PM - 3:50 PM | STC 190",
-    { latestEnd: 16 * 60, lunchStart: 12 * 60, needsOpeningShift: true },
+    { latestEnd: 16 * 60, breaks: [{ start: 12 * 60, minutes: 30 }], needsOpeningShift: true },
   );
   // Leilani also has a second job on Wednesday afternoons, to show "other times they can't work".
   const leilani = makeStudent("s2", "Leilani P.", "morning", 5, "MWF 10:00-10:50\nTTh 1:00pm-2:15pm", { blockedText: "W 2:00pm-4:00pm" });
@@ -65,6 +65,8 @@ export function buildDemoData(): { students: Student[]; assignments: ShiftBlock[
   const mele = makeStudent("s4", "Mele T.", "any", 5, "MW 1:00pm-2:15pm\nTTh 10:30-11:45");
   const tanvi = makeStudent("s5", "Tanvi R.", "morning", 3, "TTh 8:00-9:15\nTTh 1:00pm-3:40pm");
   const josefa = makeStudent("s6", "Josefa L.", "afternoon", 4, "MWF 11:00-11:50\nTh 8:00-9:15");
+  // Sione takes a Saturday-morning class, so the sample also shows Saturday classes and a 15-minute rest break.
+  const sione = makeStudent("s7", "Sione F.", "any", 5, "MWF 9:00-9:50\nSat 8:00-9:50", { breaks: [{ start: 15 * 60, minutes: 15 }] });
 
   const assignments: ShiftBlock[] = [
     ...range("s1", "mon", 8 * 60, 12 * 60),
@@ -75,7 +77,7 @@ export function buildDemoData(): { students: Student[]; assignments: ShiftBlock[
     ...range("s1", "fri", 12 * 60 + 30, 14 * 60 + 30),
   ];
 
-  return { students: [troy, leilani, kekoa, mele, tanvi, josefa], assignments };
+  return { students: [troy, leilani, kekoa, mele, tanvi, josefa, sione], assignments };
 }
 
 export const DAY_ORDER = DAYS;

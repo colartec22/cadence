@@ -17,7 +17,7 @@ import type { BusyBlock, Day, Minutes, ParseResult, ParsedMeetingLine } from "./
 const MAX_LINES = 200;
 const MAX_LINE_LENGTH = 300;
 
-const LETTER_DAY: Record<string, Day> = { M: "mon", T: "tue", W: "wed", R: "thu", F: "fri" };
+const LETTER_DAY: Record<string, Day> = { M: "mon", T: "tue", W: "wed", R: "thu", F: "fri", S: "sat" };
 
 const FULL_DAY_NAMES: [RegExp, Day][] = [
   [/^mon(day)?$/i, "mon"],
@@ -25,12 +25,14 @@ const FULL_DAY_NAMES: [RegExp, Day][] = [
   [/^wed(nesday)?$/i, "wed"],
   [/^thu(r(s(day)?)?)?$/i, "thu"],
   [/^fri(day)?$/i, "fri"],
+  [/^sat(urday)?$/i, "sat"],
 ];
-const WEEKEND_NAME = /^(sat(urday)?|sun(day)?)$/i;
+/** Sunday, written out or as "Su". The office is never open on Sunday, so it is reported instead of read. */
+const SUNDAY_NAME = /^(sun(day)?|su)$/i;
 
 /**
- * Compact day codes: "MWF", "TTh", "TR", "Th", "MW". "Th"/"Tu" are read before
- * single letters and a lone "T" is Tuesday (Thursday is "Th" or "R"). A code that
+ * Compact day codes: "MWF", "TTh", "TR", "Th", "MW", "MWFS". "Th"/"Tu"/"Sa" are read before
+ * single letters, a lone "T" is Tuesday (Thursday is "Th" or "R") and a lone "S" is Saturday. A code that
  * repeats a day ("TT") is ambiguous, so it is rejected rather than guessed.
  */
 function parseCompactDays(token: string): Day[] | null {
@@ -43,6 +45,9 @@ function parseCompactDays(token: string): Day[] | null {
       i += 2;
     } else if (s.startsWith("TU", i)) {
       out.push("tue");
+      i += 2;
+    } else if (s.startsWith("SA", i)) {
+      out.push("sat");
       i += 2;
     } else if (s[i] in LETTER_DAY) {
       out.push(LETTER_DAY[s[i]]);
@@ -76,9 +81,9 @@ export function parseDays(input: string): Day[] | null {
   return days;
 }
 
-/** True if the text names Saturday or Sunday, so the parser can explain why that part was skipped. */
-export function mentionsWeekend(input: string): boolean {
-  return input.split(DAY_SEPARATORS).some((t) => WEEKEND_NAME.test(t));
+/** True if the text names Sunday, so the parser can explain why that part was skipped. */
+export function mentionsSunday(input: string): boolean {
+  return input.split(DAY_SEPARATORS).some((t) => SUNDAY_NAME.test(t));
 }
 
 type Meridiem = "am" | "pm";
@@ -214,8 +219,8 @@ export function parseMeetingLine(rawLine: string): ParsedMeetingLine {
     return { raw, ok: false, warning: "Could not find a day + time range on this line." };
   }
   const [, dayToken, startToken, endToken] = match;
-  if (mentionsWeekend(dayToken)) {
-    return { raw, ok: false, warning: "Weekend meetings aren't part of the Mon–Fri schedule — remove this line." };
+  if (mentionsSunday(dayToken)) {
+    return { raw, ok: false, warning: "Sunday isn't part of the Monday to Saturday schedule — remove this line." };
   }
   const days = parseDays(dayToken);
   if (!days) {

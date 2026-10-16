@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
-import { formatMinutes } from "../../features/scheduling/time";
 import { BREAK_WEEKLY_HOURS, MIN_SHIFT_MINUTES } from "../../features/scheduling/constants";
 import { breakLimit, minShiftMinutes } from "../../features/scheduling/term";
 import type { ScheduleSettings } from "../../features/scheduling/types";
@@ -21,12 +20,12 @@ function hoursProblem(text: string): string | null {
 /**
  * The "Rules" popup (opened from the header). Lets the manager change the
  * office-wide settings that are meant to be edited occasionally, not per
- * student: the weekly hour cap, the weekly cap during a break, the shortest
- * shift, and the closing time. Each is validated live as the manager
- * types/picks, and the Save button is disabled until all are valid — see
- * `hoursError` / `breakError` / `closeError` below.
+ * student: the weekly hour cap, the weekly cap during a break and the shortest
+ * shift. (Office hours and the days the office is open are picked under
+ * Settings in the header.) Each is validated live as the manager types/picks,
+ * and the Save button is disabled until all are valid — see `hoursError` /
+ * `breakError` below.
  */
-const CLOSE_OPTIONS = Array.from({ length: 25 }, (_, i) => 12 * 60 + i * 30); // 12:00pm .. 12:00am (midnight)
 
 /** The "Rules" dialog where the manager changes office-wide settings (open hours, people per slot, weekly hours). */
 export function RulesDialog({
@@ -41,12 +40,10 @@ export function RulesDialog({
   const [hours, setHours] = useState(String(settings.weeklyTargetHours));
   const [breakHours, setBreakHours] = useState(String(breakLimit(settings)));
   const [minShiftHours, setMinShiftHours] = useState(minShiftMinutes(settings) / 60);
-  const [closeTime, setCloseTime] = useState(settings.closeTime);
 
   const parsed = Number(hours);
   const hoursError = hoursProblem(hours);
   const breakError = hoursProblem(breakHours);
-  const closeError = closeTime <= settings.openTime + 60 ? "The office must be open for at least an hour after it opens." : null;
 
   return (
     <Modal
@@ -60,12 +57,11 @@ export function RulesDialog({
           </Button>
           <Button
             variant="primary"
-            disabled={Boolean(hoursError || breakError || closeError)}
+            disabled={Boolean(hoursError || breakError)}
             onClick={() => {
               // Only write a choice down when it differs from the standard, so untouched settings stay untouched.
               onSave({
                 weeklyTargetHours: parsed,
-                closeTime,
                 breakWeeklyHours: Number(breakHours) === BREAK_WEEKLY_HOURS ? undefined : Number(breakHours),
                 minShiftHours: minShiftHours * 60 === MIN_SHIFT_MINUTES ? undefined : minShiftHours,
               });
@@ -146,30 +142,6 @@ export function RulesDialog({
               </option>
             ))}
           </select>
-        </div>
-
-        <div>
-          <label htmlFor="rule-close" className="block text-sm font-medium">
-            The office closes at
-          </label>
-          <p className="text-xs text-muted">Shifts after this time stay saved and still count toward hours, but they are hidden from the grid.</p>
-          <select
-            id="rule-close"
-            value={closeTime}
-            onChange={(e) => setCloseTime(Number(e.target.value))}
-            className="mt-1 rounded-lg border border-line bg-bg p-2 text-sm"
-          >
-            {CLOSE_OPTIONS.map((m) => (
-              <option key={m} value={m}>
-                {formatMinutes(m)}
-              </option>
-            ))}
-          </select>
-          {closeError && (
-            <p role="alert" className="mt-1 text-xs text-gap">
-              {closeError}
-            </p>
-          )}
         </div>
 
         <p className="rounded-lg bg-bg p-3 text-xs text-muted">

@@ -18,6 +18,9 @@ export const DEFAULT_SETTINGS: ScheduleSettings = {
   slotMinutes: 30,
   weeklyTargetHours: 19,
   term: "semester",
+  // The pilot office (a library desk) is open Monday to Saturday. Older saved schedules have no
+  // value here and are read as Monday to Friday, so nothing changes for them (see `openDays`).
+  openDays: "mon-sat",
 };
 
 /** During a semester break students may work up to this many hours a week (instead of `weeklyTargetHours`). */
@@ -26,7 +29,29 @@ export const BREAK_WEEKLY_HOURS = 40;
 /** Tuesday devotional: during the semester nobody is scheduled in this hour, and it isn't counted as a gap. */
 export const DEVOTIONAL = { day: "tue", start: 11 * 60, end: 12 * 60 } as const;
 
-export const OPEN_TIME_OPTIONS: Minutes[] = [7 * 60, 8 * 60];
+/**
+ * The office-hours choices a manager picks from (Settings → Office hours): open at 7:00am or 8:00am,
+ * close at 5:00pm or midnight. `closeTime` 24 * 60 means midnight at the END of the day.
+ */
+export const OFFICE_HOURS_OPTIONS: { openTime: Minutes; closeTime: Minutes }[] = [
+  { openTime: 7 * 60, closeTime: 24 * 60 },
+  { openTime: 7 * 60, closeTime: 17 * 60 },
+  { openTime: 8 * 60, closeTime: 24 * 60 },
+  { openTime: 8 * 60, closeTime: 17 * 60 },
+];
+
+/** Break lengths a manager can pick for a student's break, in minutes. */
+export const BREAK_LENGTH_OPTIONS = [15, 30, 45, 60];
+
+/** The break a new break row starts as (lunch at noon for 30 minutes), and what an old saved lunch time becomes. */
+export const DEFAULT_BREAK_MINUTES = 30;
+export const DEFAULT_BREAK_START: Minutes = 12 * 60;
+
+/** Most days a week anyone can work: Monday to Saturday. */
+export const MAX_DAYS_PER_WEEK = 6;
+
+/** Most breaks one student can have in a day. Three covers lunch plus two short rests on a long day. */
+export const MAX_BREAKS = 3;
 
 export const MIN_STAFF_OPTIONS = [1, 2];
 

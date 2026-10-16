@@ -7,7 +7,8 @@ import { describeGap } from "../../features/scheduling/issues";
 import { isDevotional, isOnBreak, weeklyLimit } from "../../features/scheduling/term";
 import { formatMinutes, initials } from "../../features/scheduling/selectors";
 import { endSentence } from "../../features/scheduling/time";
-import { DAYS, DAY_LABEL, DAY_LONG } from "../../features/scheduling/types";
+import { DAY_LABEL, DAY_LONG } from "../../features/scheduling/types";
+import { openDays } from "../../features/scheduling/days";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { clsx } from "../../lib/clsx";
 import type { Day, ScheduleIssue, ScheduleSettings, ShiftBlock, Student } from "../../features/scheduling/types";
@@ -66,8 +67,12 @@ export function ScheduleGrid({
 }) {
   const slots = useMemo(() => daySlots(settings), [settings]);
   const wide = useMediaQuery("(min-width: 640px)");
-  const [mobileDay, setMobileDay] = useState<Day>("mon");
-  const visibleDays: Day[] = wide ? DAYS : [mobileDay];
+  // Saturday shows only when the office is open on Saturdays (Settings → Days open).
+  const days = useMemo(() => openDays(settings), [settings]);
+  const [chosenMobileDay, setMobileDay] = useState<Day>("mon");
+  // If the office stops opening on the day picked on a phone (Saturday), fall back to Monday.
+  const mobileDay = days.includes(chosenMobileDay) ? chosenMobileDay : days[0];
+  const visibleDays: Day[] = wide ? days : [mobileDay];
 
   const [active, setActive] = useState({ row: 0, col: 0 });
   const [info, setInfo] = useState<{ day: Day; start: number } | null>(null);
@@ -97,7 +102,7 @@ export function ScheduleGrid({
   // Everything a cell needs, worked out once per data change (not on every hover).
   const model = useMemo(() => {
     const out = new Map<string, CellModel>();
-    for (const day of DAYS) {
+    for (const day of days) {
       for (const start of slots) {
         const staffIds = staffAt(day, start, assignments);
         const names = staffIds.map((id) => studentById.get(id)?.name ?? "Unknown");
@@ -109,7 +114,7 @@ export function ScheduleGrid({
           violation && (violation.code === "class_conflict" ||
             violation.code === "unavailable" ||
             violation.code === "after_cutoff" ||
-            violation.code === "lunch_conflict" ||
+            violation.code === "break_conflict" ||
           violation.code === "devotional"),
         );
 
@@ -278,7 +283,7 @@ export function ScheduleGrid({
 
       {!wide && (
         <div role="group" aria-label="Choose a day" className="flex gap-1">
-          {DAYS.map((d) => (
+          {days.map((d) => (
             <button
               key={d}
               type="button"

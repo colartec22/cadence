@@ -114,7 +114,7 @@ export function ImportPanel({
     setStatus("Sending the screenshot for enhanced reading… this can take a little while.");
     try {
       if (enhancedMode === "ai") {
-        // The n8n AI reader (James's server workflow) also fills in lunch, cutoff and other settings.
+        // The n8n AI reader (James's server workflow) also fills in breaks, cutoff and other settings.
         const outcome = await extractSchedule({ text: classText, image });
         onExtracted(outcome);
         setStatus(outcome.error ?? (outcome.ai ? "Done. Please check what it found below before saving." : null));

@@ -46,7 +46,7 @@ export function nextStep(input: GuidanceInput): Guidance {
     return {
       tone: "todo",
       title: "Next: let Cadence fill the week",
-      body: "Press the button and it will place shifts for everyone around classes and lunch. You can change anything after.",
+      body: "Press the button and it will place shifts for everyone around classes and breaks. You can change anything after.",
       action: { label: "Fill schedule for me", kind: "auto-fill" },
     };
   }

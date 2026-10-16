@@ -19,7 +19,7 @@ const noa: NewStudentInput = {
   classText: "MWF 9:00am-9:50am",
   blockedText: "",
   latestEnd: 24 * 60,
-  lunchStart: null,
+  breaks: [],
   needsOpeningShift: false,
 };
 

@@ -127,7 +127,7 @@ export function scheduleForServer(
       daysPerWeek: s.daysPerWeek,
       busy: s.busy,
       latestEnd: s.latestEnd,
-      lunchStart: s.lunchStart,
+      breaks: s.breaks,
       needsOpeningShift: s.needsOpeningShift,
     })),
     assignments,
